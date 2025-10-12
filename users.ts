@@ -57,4 +57,22 @@ const LEADMAN_USERS: User[] = FARM_NAMES.map((farmName, index) => {
 export const INITIAL_USERS: User[] = [
   ...SUPERVISOR_AND_ADMIN_USERS,
   ...LEADMAN_USERS,
+  {
+    id: 'sitemanager1',
+    name: 'Site Manager',
+    username: 'sitemanager',
+    password: '123',
+    role: 'Site Manager',
+    authorizedFarms: FARM_NAMES,
+    contactNumber: '0511112222'
+  },
+  {
+    id: 'gatekeeper1',
+    name: 'Gate Keeper',
+    username: 'gate',
+    password: '123',
+    role: 'Gate Keeper',
+    authorizedFarms: [],
+    contactNumber: '0598765432'
+  },
 ];

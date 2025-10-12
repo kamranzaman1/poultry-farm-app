@@ -5,7 +5,7 @@ export type User = {
   name: string;
   username: string;
   password: string;
-  role: 'Admin' | 'Supervisor' | 'Leadman';
+  role: 'Admin' | 'Site Manager' | 'Supervisor' | 'Leadman' | 'Gate Keeper';
   authorizedFarms: string[];
   contactNumber?: string;
 };
@@ -251,7 +251,7 @@ export interface Notification {
   message: string;
   read: boolean;
   timestamp: string;
-  targetRoles?: ('Admin' | 'Supervisor' | 'Leadman')[];
+  targetRoles?: ('Admin' | 'Site Manager' | 'Supervisor' | 'Leadman')[];
   targetFarms?: string[];
 }
 
@@ -333,4 +333,39 @@ export interface LeaveRequest {
   reviewedBy?: string;
   reviewedAt?: string;
   rejectionReason?: string;
+}
+
+export interface FeedBulkerRecord {
+  id: string;
+  date: string;
+  farm: string;
+  farmAge: string;
+  typeOfFeed: string;
+  driverName: string;
+  truckPlateNo: string;
+  sideNo: string;
+  bulkerNo: string;
+  entryTime: string;
+  exitTime: string;
+  meta?: CreationAuditInfo;
+}
+
+export interface VehicleMovementLog {
+  id: string;
+  date: string;
+  department: string;
+  vehicleType: 'Car / P-ups / SUV' | 'Trucks' | 'Trailers (Feed bulkers, diesel tanker,..)' | 'Bus / Coasters' | 'Scooter / Cycles' | 'Others 1';
+  direction: 'In' | 'Out';
+  timestamp: string;
+  meta?: CreationAuditInfo;
+}
+
+export interface InChargeTimeLog {
+  id: string;
+  date: string;
+  inchargeId: string;
+  inchargeName: string;
+  inTime: string;
+  outTime: string;
+  meta?: CreationAuditInfo;
 }

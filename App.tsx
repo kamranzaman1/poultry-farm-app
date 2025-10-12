@@ -1,12 +1,11 @@
 
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import LoginScreen from './components/LoginScreen';
 import MaintenanceScreen from './components/MaintenanceScreen';
 import { INITIAL_USERS } from './users';
 import { INITIAL_EMPLOYEES } from './employees';
-import type { AllFarmsData, DieselOrder, FarmDailyData, AllFarmsFeedOrders, FeedOrderData, User, AllFarmsChicksReceivingData, ChicksReceivingData, DailyReport, SubmittedFeedOrder, FeedOrderItem, AllFarmsWeeklyWeightData, WeeklyWeightData, AllFarmsFeedDeliveryData, FeedDeliveryRecord, FeedDeliveryRecordData, Cycle, SelectedFarmCycleDetails, Notification, AllFarmsCatchingDetailsData, CatchingDetailsData, AllFarmsSalmonellaData, SalmonellaData, CatchingProgramEntry, ChicksReceivingHouseData, AllFarmsChicksGradingData, ChicksGradingData, LeaveRequest, Employee, SepticTankRequest } from './types';
+import type { AllFarmsData, DieselOrder, FarmDailyData, AllFarmsFeedOrders, FeedOrderData, User, AllFarmsChicksReceivingData, ChicksReceivingData, DailyReport, SubmittedFeedOrder, FeedOrderItem, AllFarmsWeeklyWeightData, WeeklyWeightData, AllFarmsFeedDeliveryData, FeedDeliveryRecord, FeedDeliveryRecordData, Cycle, SelectedFarmCycleDetails, Notification, AllFarmsCatchingDetailsData, CatchingDetailsData, AllFarmsSalmonellaData, SalmonellaData, CatchingProgramEntry, ChicksReceivingHouseData, AllFarmsChicksGradingData, ChicksGradingData, LeaveRequest, Employee, SepticTankRequest, FeedBulkerRecord, VehicleMovementLog, InChargeTimeLog, CreationAuditInfo } from './types';
 import { getInitialData, getInitialFeedOrderData, getInitialChicksReceivingData, getInitialWeeklyWeightData, getInitialFeedDeliveryData, getInitialCatchingDetailsData, getInitialSalmonellaData, createEmptyChicksReceivingDataForFarm, createEmptyWeeklyWeightDataForFarm, createEmptyCatchingDetailsDataForFarm, createEmptySalmonellaDataForFarm, createEmptyFeedDeliveryRecord, getInitialChicksGradingData, createEmptyChicksGradingDataForFarm } from './utils/dataHelper';
 import { getHouseCountForFarm, PRODUCTION_LINE_MAP } from './constants';
 
@@ -148,6 +147,9 @@ function App() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [septicTankRequests, setSepticTankRequests] = useState<SepticTankRequest[]>([]);
   const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES);
+  const [feedBulkerRecords, setFeedBulkerRecords] = useState<FeedBulkerRecord[]>([]);
+  const [vehicleMovementLogs, setVehicleMovementLogs] = useState<VehicleMovementLog[]>([]);
+  const [inChargeTimeLogs, setInChargeTimeLogs] = useState<InChargeTimeLog[]>([]);
   const [editingFeedOrderId, setEditingFeedOrderId] = useState<string | null>(null);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(false);
 
@@ -195,6 +197,9 @@ function App() {
           setLeaveRequests(parsedState.leaveRequests || []);
           setSepticTankRequests(parsedState.septicTankRequests || []);
           setEmployees(parsedState.employees || INITIAL_EMPLOYEES);
+          setFeedBulkerRecords(parsedState.feedBulkerRecords || []);
+          setVehicleMovementLogs(parsedState.vehicleMovementLogs || []);
+          setInChargeTimeLogs(parsedState.inChargeTimeLogs || []);
           setIsMaintenanceMode(parsedState.isMaintenanceMode || false);
 
           // --- Data Migration Logic ---
@@ -272,6 +277,9 @@ function App() {
         leaveRequests,
         septicTankRequests,
         employees,
+        feedBulkerRecords,
+        vehicleMovementLogs,
+        inChargeTimeLogs,
         isMaintenanceMode,
       };
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
@@ -296,6 +304,9 @@ function App() {
     leaveRequests,
     septicTankRequests,
     employees,
+    feedBulkerRecords,
+    vehicleMovementLogs,
+    inChargeTimeLogs,
     isMaintenanceMode,
     isInitialized,
   ]);
@@ -365,7 +376,10 @@ function App() {
     if (!currentUser) return [];
 
     const filtered = combined.filter(n => {
-        const roleMatch = !n.targetRoles || n.targetRoles.includes(currentUser.role);
+        // The `currentUser.role` can be 'Gate Keeper', which is not a valid element type for `targetRoles`.
+        // The `includes` method expects its argument to be of the same type as the array elements.
+        // Casting the role ensures type safety for this check.
+        const roleMatch = !n.targetRoles || n.targetRoles.includes(currentUser.role as 'Admin' | 'Site Manager' | 'Supervisor' | 'Leadman');
         const farmMatch = !n.targetFarms || n.targetFarms.some(farm => currentUser.authorizedFarms.includes(farm));
         return roleMatch && farmMatch;
     });
@@ -697,6 +711,9 @@ function App() {
         leaveRequests,
         septicTankRequests,
         employees,
+        feedBulkerRecords,
+        vehicleMovementLogs,
+        inChargeTimeLogs,
         isMaintenanceMode,
       };
     const dataStr = JSON.stringify(appState, null, 2);
@@ -728,6 +745,9 @@ function App() {
     leaveRequests,
     septicTankRequests,
     employees,
+    feedBulkerRecords,
+    vehicleMovementLogs,
+    inChargeTimeLogs,
     isMaintenanceMode,
   ]);
 
@@ -739,10 +759,24 @@ function App() {
             throw new Error("Invalid file format.");
         }
         
+        // Merge imported users with the initial users to ensure new roles are always present.
+        const importedUsers: User[] = importedState.users || [];
+        // Create a map of the default users for easy lookup and update, using username as the key.
+        const mergedUserMap = new Map(INITIAL_USERS.map(u => [u.username, u]));
+
+        // Iterate through imported users. Update existing ones or add new ones.
+        for (const importedUser of importedUsers) {
+            // Use the username as the unique key for merging.
+            // This will overwrite defaults with imported data if usernames match,
+            // and add any new users from the import file.
+            mergedUserMap.set(importedUser.username, { ...(mergedUserMap.get(importedUser.username) || {}), ...importedUser });
+        }
+        
+        setUsers(Array.from(mergedUserMap.values()));
+        
         const importedCycles = importedState.cycles || [];
 
         // Apply non-migratable data
-        setUsers(importedState.users || INITIAL_USERS);
         setAllFarmsData(importedState.allFarmsData || getInitialData());
         setAllFarmsFeedOrders(importedState.allFarmsFeedOrders || getInitialFeedOrderData());
         setAllFarmsFeedDeliveryData(importedState.allFarmsFeedDeliveryData || getInitialFeedDeliveryData());
@@ -754,6 +788,9 @@ function App() {
         setLeaveRequests(importedState.leaveRequests || []);
         setSepticTankRequests(importedState.septicTankRequests || []);
         setEmployees(importedState.employees || INITIAL_EMPLOYEES);
+        setFeedBulkerRecords(importedState.feedBulkerRecords || []);
+        setVehicleMovementLogs(importedState.vehicleMovementLogs || []);
+        setInChargeTimeLogs(importedState.inChargeTimeLogs || []);
         setIsMaintenanceMode(importedState.isMaintenanceMode || false);
 
         // Apply migratable data with checks
@@ -939,7 +976,7 @@ function App() {
 
   // When user changes, if the current selected farm is not in their new list, select the first one.
   useEffect(() => {
-    if (currentUser && !currentUser.authorizedFarms.includes(selectedFarm)) {
+    if (currentUser && currentUser.role !== 'Gate Keeper' && !currentUser.authorizedFarms.includes(selectedFarm)) {
       if (currentUser.authorizedFarms.length > 0) {
         setSelectedFarm(currentUser.authorizedFarms[0]);
       } else {
@@ -1559,10 +1596,89 @@ function App() {
     }));
   }, [currentUser]);
 
+  const handleAddFeedBulkerRecord = useCallback((record: Omit<FeedBulkerRecord, 'id' | 'meta'>) => {
+    if (!currentUser) return;
+    const newRecord: FeedBulkerRecord = {
+        ...record,
+        id: new Date().toISOString() + Math.random(),
+        meta: { createdBy: currentUser.username, createdAt: new Date().toISOString(), updatedBy: currentUser.username, updatedAt: new Date().toISOString() }
+    };
+    setFeedBulkerRecords(prev => [...prev, newRecord].sort((a, b) => b.date.localeCompare(a.date) || b.entryTime.localeCompare(a.entryTime)));
+    sendDataToGoogleSheet('FeedBulker_Add', { record: newRecord, user: currentUser.username });
+  }, [currentUser]);
+
+  // Fix: Explicitly construct the meta object to ensure it conforms to the CreationAuditInfo type,
+  // which requires createdBy and createdAt properties. This resolves a TypeScript error when rec.meta is potentially undefined,
+  // and fixes a potential runtime error.
+  const handleUpdateFeedBulkerRecord = useCallback((updatedRecord: FeedBulkerRecord) => {
+    if (!currentUser) return;
+    setFeedBulkerRecords(prev =>
+        prev.map(rec => {
+            if (rec.id === updatedRecord.id) {
+                const newMeta: CreationAuditInfo = {
+                    createdBy: rec.meta?.createdBy || 'system',
+                    createdAt: rec.meta?.createdAt || new Date().toISOString(),
+                    updatedBy: currentUser.username,
+                    updatedAt: new Date().toISOString()
+                };
+                return { ...updatedRecord, meta: newMeta };
+            }
+            return rec;
+        }
+        ).sort((a, b) => b.date.localeCompare(a.date) || (b.entryTime || '').localeCompare(a.entryTime || ''))
+    );
+    sendDataToGoogleSheet('FeedBulker_Update', { record: updatedRecord, user: currentUser.username });
+  }, [currentUser]);
+
+  const handleAddVehicleMovementLog = useCallback((log: Omit<VehicleMovementLog, 'id' | 'meta' | 'timestamp'>) => {
+    if (!currentUser) return;
+    const newLog: VehicleMovementLog = {
+        ...log,
+        id: new Date().toISOString() + Math.random(),
+        timestamp: new Date().toISOString(),
+        meta: { createdBy: currentUser.username, createdAt: new Date().toISOString(), updatedBy: currentUser.username, updatedAt: new Date().toISOString() }
+    };
+    setVehicleMovementLogs(prev => [newLog, ...prev]);
+    sendDataToGoogleSheet('VehicleMovement_Add', { log: newLog, user: currentUser.username });
+  }, [currentUser]);
+
+  // Fix: Explicitly construct the meta object to prevent a potential runtime error if meta is undefined
+  // and to ensure the object conforms to the CreationAuditInfo type.
+  const handleAddOrUpdateInChargeTimeLog = useCallback((log: Omit<InChargeTimeLog, 'id' | 'meta'> & { id?: string }) => {
+    if (!currentUser) return;
+    setInChargeTimeLogs(prev => {
+        const existingIndex = prev.findIndex(l => l.date === log.date && l.inchargeId === log.inchargeId);
+        if (existingIndex > -1) {
+            // Update
+            const updatedLogs = [...prev];
+            const existingLog = updatedLogs[existingIndex];
+            const newMeta: CreationAuditInfo = {
+                createdBy: existingLog.meta?.createdBy || 'system',
+                createdAt: existingLog.meta?.createdAt || new Date().toISOString(),
+                updatedBy: currentUser.username,
+                updatedAt: new Date().toISOString()
+            };
+            const updatedLog = { ...existingLog, ...log, meta: newMeta };
+            updatedLogs[existingIndex] = updatedLog;
+            sendDataToGoogleSheet('InChargeTimeLog_Update', { log: updatedLog, user: currentUser.username });
+            return updatedLogs;
+        } else {
+            // Add
+            const newLog: InChargeTimeLog = {
+                ...log,
+                id: new Date().toISOString() + Math.random(),
+                meta: { createdBy: currentUser.username, createdAt: new Date().toISOString(), updatedBy: currentUser.username, updatedAt: new Date().toISOString() }
+            };
+            sendDataToGoogleSheet('InChargeTimeLog_Add', { log: newLog, user: currentUser.username });
+            return [newLog, ...prev];
+        }
+    });
+  }, [currentUser]);
+
 
   // Filter all data based on the current user's authorized farms
   const authorizedFarmsData = useMemo(() => {
-    if (!currentUser) return {};
+    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsData;
     const filteredData: AllFarmsData = {};
     for (const farm of currentUser.authorizedFarms) {
       if (allFarmsData[farm]) {
@@ -1573,7 +1689,7 @@ function App() {
   }, [allFarmsData, currentUser]);
 
   const authorizedFarmsFeedOrders = useMemo(() => {
-    if (!currentUser) return {};
+    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsFeedOrders;
     const filteredData: AllFarmsFeedOrders = {};
     for (const farm of currentUser.authorizedFarms) {
       if (allFarmsFeedOrders[farm]) {
@@ -1584,7 +1700,7 @@ function App() {
   }, [allFarmsFeedOrders, currentUser]);
 
   const authorizedFarmsChicksReceivingData = useMemo(() => {
-    if (!currentUser) return {};
+    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsChicksReceivingData;
     const filteredData: AllFarmsChicksReceivingData = {};
     for (const farm of currentUser.authorizedFarms) {
       if (allFarmsChicksReceivingData[farm]) {
@@ -1595,7 +1711,7 @@ function App() {
   }, [allFarmsChicksReceivingData, currentUser]);
 
   const authorizedFarmsWeeklyWeightData = useMemo(() => {
-    if (!currentUser) return {};
+    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsWeeklyWeightData;
     const filteredData: AllFarmsWeeklyWeightData = {};
     for (const farm of currentUser.authorizedFarms) {
         if (allFarmsWeeklyWeightData[farm]) {
@@ -1606,7 +1722,7 @@ function App() {
   }, [allFarmsWeeklyWeightData, currentUser]);
 
   const authorizedFarmsChicksGradingData = useMemo(() => {
-    if (!currentUser) return {};
+    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsChicksGradingData;
     const filteredData: AllFarmsChicksGradingData = {};
     for (const farm of currentUser.authorizedFarms) {
         if (allFarmsChicksGradingData[farm]) {
@@ -1617,7 +1733,7 @@ function App() {
   }, [allFarmsChicksGradingData, currentUser]);
 
   const authorizedFarmsFeedDeliveryData = useMemo(() => {
-    if (!currentUser) return {};
+    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsFeedDeliveryData;
     const filteredData: AllFarmsFeedDeliveryData = {};
     for (const farm of currentUser.authorizedFarms) {
         if (allFarmsFeedDeliveryData[farm]) {
@@ -1628,7 +1744,7 @@ function App() {
   }, [allFarmsFeedDeliveryData, currentUser]);
   
   const authorizedFarmsCatchingDetailsData = useMemo(() => {
-    if (!currentUser) return {};
+    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsCatchingDetailsData;
     const filteredData: AllFarmsCatchingDetailsData = {};
     for (const farm of currentUser.authorizedFarms) {
         if (allFarmsCatchingDetailsData[farm]) {
@@ -1639,7 +1755,7 @@ function App() {
   }, [allFarmsCatchingDetailsData, currentUser]);
 
   const authorizedFarmsSalmonellaData = useMemo(() => {
-    if (!currentUser) return {};
+    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsSalmonellaData;
     const filteredData: AllFarmsSalmonellaData = {};
     for (const farm of currentUser.authorizedFarms) {
         if (allFarmsSalmonellaData[farm]) {
@@ -1742,6 +1858,9 @@ function App() {
     if (!currentUser) {
       return [];
     }
+    if (currentUser.role === 'Gate Keeper') {
+        return dieselOrders;
+    }
     return dieselOrders.filter(order => 
       currentUser.authorizedFarms.includes(order.farmName)
     );
@@ -1766,7 +1885,7 @@ function App() {
     return <LoginScreen onLogin={handleLogin} isMaintenanceMode={isMaintenanceMode} />;
   }
 
-  if (currentUser.authorizedFarms.length === 0) {
+  if (currentUser.role !== 'Gate Keeper' && currentUser.authorizedFarms.length === 0) {
       return (
           <div className="flex items-center justify-center min-h-screen poultry-background">
               <div className="text-center p-8 bg-white rounded-lg shadow-md">
@@ -1780,7 +1899,7 @@ function App() {
       );
   }
 
-  if (!selectedFarm || !selectedFarmFeedOrderData || !selectedFarmChicksReceivingData || !selectedFarmWeeklyWeightData || !selectedFarmChicksGradingData || !selectedFarmCatchingDetailsData || !selectedFarmSalmonellaData) {
+  if (currentUser.role !== 'Gate Keeper' && (!selectedFarm || !selectedFarmFeedOrderData || !selectedFarmChicksReceivingData || !selectedFarmWeeklyWeightData || !selectedFarmChicksGradingData || !selectedFarmCatchingDetailsData || !selectedFarmSalmonellaData)) {
       return (
            <div className="flex items-center justify-center min-h-screen poultry-background">
               <div className="text-center p-8 bg-white rounded-lg shadow-md">
@@ -1822,6 +1941,9 @@ function App() {
               leaveRequests={leaveRequests}
               septicTankRequests={septicTankRequests}
               employees={employees}
+              feedBulkerRecords={feedBulkerRecords}
+              vehicleMovementLogs={vehicleMovementLogs}
+              inChargeTimeLogs={inChargeTimeLogs}
               editingFeedOrderId={editingFeedOrderId}
               onMarkNotificationsAsRead={handleMarkNotificationsAsRead}
               onStartNewCycle={handleStartNewCycle}
@@ -1855,6 +1977,10 @@ function App() {
               onDeleteEmployee={handleDeleteEmployee}
               onBulkDeleteEmployees={handleBulkDeleteEmployees}
               onBulkImportEmployees={handleBulkImportEmployees}
+              onAddFeedBulkerRecord={handleAddFeedBulkerRecord}
+              onUpdateFeedBulkerRecord={handleUpdateFeedBulkerRecord}
+              onAddVehicleMovementLog={handleAddVehicleMovementLog}
+              onAddOrUpdateInChargeTimeLog={handleAddOrUpdateInChargeTimeLog}
               allAuthorizedFarmsData={authorizedFarmsData}
               allAuthorizedFarmsChicksReceivingData={authorizedFarmsChicksReceivingData}
               allAuthorizedFarmsWeeklyWeightData={authorizedFarmsWeeklyWeightData}

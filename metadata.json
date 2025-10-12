@@ -1,0 +1,5 @@
+{
+  "name": "Poultry Farm Data Entry",
+  "description": "A multi-user data entry application for poultry farms to track daily mortality, feed orders, water consumption, temperature, and diesel requests.",
+  "requestFramePermissions": []
+}

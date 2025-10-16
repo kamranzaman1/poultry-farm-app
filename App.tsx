@@ -1,13 +1,14 @@
 
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import LoginScreen from './components/LoginScreen';
 import MaintenanceScreen from './components/MaintenanceScreen';
 import { INITIAL_USERS } from './users';
 import { INITIAL_EMPLOYEES } from './employees';
-import type { AllFarmsData, DieselOrder, FarmDailyData, AllFarmsFeedOrders, FeedOrderData, User, AllFarmsChicksReceivingData, ChicksReceivingData, DailyReport, SubmittedFeedOrder, FeedOrderItem, AllFarmsWeeklyWeightData, WeeklyWeightData, AllFarmsFeedDeliveryData, FeedDeliveryRecord, FeedDeliveryRecordData, Cycle, SelectedFarmCycleDetails, Notification, AllFarmsCatchingDetailsData, CatchingDetailsData, AllFarmsSalmonellaData, SalmonellaData, CatchingProgramEntry, ChicksReceivingHouseData, AllFarmsChicksGradingData, ChicksGradingData, LeaveRequest, Employee, SepticTankRequest, FeedBulkerRecord, VehicleMovementLog, InChargeTimeLog, CreationAuditInfo } from './types';
-import { getInitialData, getInitialFeedOrderData, getInitialChicksReceivingData, getInitialWeeklyWeightData, getInitialFeedDeliveryData, getInitialCatchingDetailsData, getInitialSalmonellaData, createEmptyChicksReceivingDataForFarm, createEmptyWeeklyWeightDataForFarm, createEmptyCatchingDetailsDataForFarm, createEmptySalmonellaDataForFarm, createEmptyFeedDeliveryRecord, getInitialChicksGradingData, createEmptyChicksGradingDataForFarm } from './utils/dataHelper';
-import { getHouseCountForFarm, PRODUCTION_LINE_MAP } from './constants';
+import type { AllFarmsData, DieselOrder, FarmDailyData, AllFarmsFeedOrders, FeedOrderData, User, AllFarmsChicksReceivingData, ChicksReceivingData, DailyReport, SubmittedFeedOrder, AllFarmsWeeklyWeightData, WeeklyWeightData, AllFarmsFeedDeliveryData, FeedDeliveryRecord, FeedDeliveryRecordData, Cycle, SelectedFarmCycleDetails, Notification, AllFarmsCatchingDetailsData, CatchingDetailsData, AllFarmsSalmonellaData, SalmonellaData, CatchingProgramEntry, AllFarmsChicksGradingData, ChicksGradingData, LeaveRequest, Employee, SepticTankRequest, FeedBulkerRecord, VehicleMovementLog, InChargeTimeLog, CreationAuditInfo, AllFarmsWaterData, DailyWaterRecord, AuditInfo, VehicleDetails, WaterRecordHouseData } from './types';
+import { getInitialData, getInitialFeedOrderData, getInitialChicksReceivingData, getInitialWeeklyWeightData, getInitialFeedDeliveryData, getInitialCatchingDetailsData, getInitialSalmonellaData, createEmptyChicksReceivingDataForFarm, createEmptyWeeklyWeightDataForFarm, createEmptyCatchingDetailsDataForFarm, createEmptySalmonellaDataForFarm, getInitialChicksGradingData, createEmptyChicksGradingDataForFarm, getInitialWaterData } from './utils/dataHelper';
+import { FARM_NAMES } from './constants';
 
 const LOCAL_STORAGE_KEY = 'poultryFarmData';
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxSHSRenvnX9T1SZooYoi5-y7qiuTRDHzoM0sHgO7fcBkR6dshmJn9lDqnw6qqB_6rbpw/exec';
@@ -132,6 +133,7 @@ function App() {
   const [selectedFarm, setSelectedFarm] = useState<string>('');
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
   const [allFarmsData, setAllFarmsData] = useState<AllFarmsData>(() => getInitialData());
+  const [allFarmsWaterData, setAllFarmsWaterData] = useState<AllFarmsWaterData>(() => getInitialWaterData());
   const [allFarmsFeedOrders, setAllFarmsFeedOrders] = useState<AllFarmsFeedOrders>(() => getInitialFeedOrderData());
   const [allFarmsChicksReceivingData, setAllFarmsChicksReceivingData] = useState<AllFarmsChicksReceivingData>(() => getInitialChicksReceivingData());
   const [allFarmsWeeklyWeightData, setAllFarmsWeeklyWeightData] = useState<AllFarmsWeeklyWeightData>(() => getInitialWeeklyWeightData());
@@ -150,6 +152,7 @@ function App() {
   const [feedBulkerRecords, setFeedBulkerRecords] = useState<FeedBulkerRecord[]>([]);
   const [vehicleMovementLogs, setVehicleMovementLogs] = useState<VehicleMovementLog[]>([]);
   const [inChargeTimeLogs, setInChargeTimeLogs] = useState<InChargeTimeLog[]>([]);
+  const [vehicleDetails, setVehicleDetails] = useState<VehicleDetails[]>([]);
   const [editingFeedOrderId, setEditingFeedOrderId] = useState<string | null>(null);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(false);
 
@@ -188,6 +191,7 @@ function App() {
           setCycles(savedCycles);
           setUsers(parsedState.users || INITIAL_USERS);
           setAllFarmsData(parsedState.allFarmsData || getInitialData());
+          setAllFarmsWaterData(parsedState.allFarmsWaterData || getInitialWaterData());
           setAllFarmsFeedOrders(parsedState.allFarmsFeedOrders || getInitialFeedOrderData());
           setAllFarmsFeedDeliveryData(parsedState.allFarmsFeedDeliveryData || getInitialFeedDeliveryData());
           setCatchingProgramEntries(parsedState.catchingProgramEntries || []);
@@ -200,6 +204,7 @@ function App() {
           setFeedBulkerRecords(parsedState.feedBulkerRecords || []);
           setVehicleMovementLogs(parsedState.vehicleMovementLogs || []);
           setInChargeTimeLogs(parsedState.inChargeTimeLogs || []);
+          setVehicleDetails(parsedState.vehicleDetails || []);
           setIsMaintenanceMode(parsedState.isMaintenanceMode || false);
 
           // --- Data Migration Logic ---
@@ -262,6 +267,7 @@ function App() {
       const appState = {
         users,
         allFarmsData,
+        allFarmsWaterData,
         allFarmsFeedOrders,
         allFarmsChicksReceivingData,
         allFarmsWeeklyWeightData,
@@ -280,6 +286,7 @@ function App() {
         feedBulkerRecords,
         vehicleMovementLogs,
         inChargeTimeLogs,
+        vehicleDetails,
         isMaintenanceMode,
       };
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
@@ -289,6 +296,7 @@ function App() {
   }, [
     users,
     allFarmsData,
+    allFarmsWaterData,
     allFarmsFeedOrders,
     allFarmsChicksReceivingData,
     allFarmsWeeklyWeightData,
@@ -307,6 +315,7 @@ function App() {
     feedBulkerRecords,
     vehicleMovementLogs,
     inChargeTimeLogs,
+    vehicleDetails,
     isMaintenanceMode,
     isInitialized,
   ]);
@@ -395,1609 +404,659 @@ function App() {
     // The "latest" active cycle is the one with the most recent ID (timestamp).
     return activeCycles.sort((a, b) => b.id.localeCompare(a.id))[0] || null;
   }, [cycles]);
-  
+
   const cyclesForSelectedFarm = useMemo(() => {
     if (!selectedFarm) return [];
+    // Filter cycles to only include those where the selected farm is present.
     return cycles
-        .filter(cycle => cycle.farms.some(f => f.farmName === selectedFarm))
-        .sort((a, b) => {
-            const aFarm = a.farms.find(f => f.farmName === selectedFarm)!;
-            const bFarm = b.farms.find(f => f.farmName === selectedFarm)!;
-            return new Date(bFarm.startDate).getTime() - new Date(aFarm.startDate).getTime();
-        });
+        .filter(c => c.farms.some(f => f.farmName === selectedFarm))
+        .sort((a, b) => b.id.localeCompare(a.id)); // Sort newest first
   }, [cycles, selectedFarm]);
 
-  // Effect to manage the selectedCycleId when the farm changes or cycles load
+  const selectedFarmCycleDetails = useMemo<SelectedFarmCycleDetails | null>(() => {
+    if (!selectedFarm || !selectedCycleId) return null;
+    const cycle = cycles.find(c => c.id === selectedCycleId);
+    if (!cycle) return null;
+    const farmDetails = cycle.farms.find(f => f.farmName === selectedFarm);
+    if (!farmDetails) return null;
+    return {
+      cycleId: cycle.id,
+      cycleNo: cycle.cycleNo,
+      ...farmDetails
+    };
+  }, [selectedFarm, selectedCycleId, cycles]);
+
   useEffect(() => {
-    if (cyclesForSelectedFarm.length > 0) {
-        // If the current selectedCycleId is not valid for the new farm, reset it.
-        const isCurrentCycleValid = cyclesForSelectedFarm.some(c => c.id === selectedCycleId);
-        if (!isCurrentCycleValid) {
-            setSelectedCycleId(cyclesForSelectedFarm[0].id); // Default to the latest one
-        }
-    } else {
+    // Auto-select the latest cycle for the selected farm.
+    if (cyclesForSelectedFarm.length > 0 && !selectedCycleId) {
+        setSelectedCycleId(cyclesForSelectedFarm[0].id);
+    } else if (cyclesForSelectedFarm.length > 0 && !cyclesForSelectedFarm.some(c => c.id === selectedCycleId)) {
+        // If the current selected cycle ID is not valid for the new farm, reset to the latest one
+        setSelectedCycleId(cyclesForSelectedFarm[0].id);
+    } else if (cyclesForSelectedFarm.length === 0) {
         setSelectedCycleId(null);
     }
   }, [cyclesForSelectedFarm, selectedCycleId]);
 
-  const selectedFarmCycleDetails = useMemo<SelectedFarmCycleDetails | null>(() => {
-    if (!selectedFarm || !selectedCycleId) return null;
+  // --- DERIVED DATA FOR DASHBOARD ---
+  const dailyReports = useMemo<DailyReport[]>(() => {
+    if (!selectedFarmCycleDetails) return [];
+    const { startDate, finishDate } = selectedFarmCycleDetails;
+    const startDateObj = new Date(startDate.replace(/-/g, '/'));
+    const endDateObj = finishDate ? new Date(finishDate.replace(/-/g, '/')) : new Date();
 
-    const cycle = cycles.find(c => c.id === selectedCycleId);
-    if (!cycle) return null;
+    return (allFarmsData[selectedFarm] || []).filter(report => {
+        const reportDate = new Date(report.date.replace(/-/g, '/'));
+        return reportDate >= startDateObj && reportDate <= endDateObj;
+    });
+  }, [allFarmsData, selectedFarm, selectedFarmCycleDetails]);
 
-    const farmDetails = cycle.farms.find(f => f.farmName === selectedFarm);
-    if (!farmDetails) return null;
-    
-    return {
-        cycleId: cycle.id,
-        cycleNo: cycle.cycleNo,
-        ...farmDetails
-    };
-  }, [cycles, selectedFarm, selectedCycleId]);
+  const getCycleSpecificData = <T extends { cycleId: string }>(allData: { [farmName: string]: T[] }): T | undefined => {
+    if (!selectedFarm || !selectedCycleId) return undefined;
+    return (allData[selectedFarm] || []).find(d => d.cycleId === selectedCycleId);
+  };
+  
+  const feedOrderData = useMemo(() => allFarmsFeedOrders[selectedFarm] || getInitialFeedOrderData()[selectedFarm], [allFarmsFeedOrders, selectedFarm]);
+  const chicksReceivingData = useMemo(() => getCycleSpecificData(allFarmsChicksReceivingData) || createEmptyChicksReceivingDataForFarm(selectedFarm, selectedCycleId || ''), [allFarmsChicksReceivingData, selectedFarm, selectedCycleId]);
+  const weeklyWeightData = useMemo(() => getCycleSpecificData(allFarmsWeeklyWeightData) || createEmptyWeeklyWeightDataForFarm(selectedFarm, selectedCycleId || ''), [allFarmsWeeklyWeightData, selectedFarm, selectedCycleId]);
+  const chicksGradingData = useMemo(() => getCycleSpecificData(allFarmsChicksGradingData) || createEmptyChicksGradingDataForFarm(selectedFarm, selectedCycleId || ''), [allFarmsChicksGradingData, selectedFarm, selectedCycleId]);
+  const catchingDetailsData = useMemo(() => getCycleSpecificData(allFarmsCatchingDetailsData) || createEmptyCatchingDetailsDataForFarm(selectedFarm, selectedCycleId || ''), [allFarmsCatchingDetailsData, selectedFarm, selectedCycleId]);
+  const salmonellaData = useMemo(() => getCycleSpecificData(allFarmsSalmonellaData) || createEmptySalmonellaDataForFarm(selectedFarm, selectedCycleId || ''), [allFarmsSalmonellaData, selectedFarm, selectedCycleId]);
+  
+  const feedDeliveryRecords = useMemo(() => (allFarmsFeedDeliveryData[selectedFarm] || []).filter(r => r.cycleId === selectedCycleId), [allFarmsFeedDeliveryData, selectedFarm, selectedCycleId]);
+  const waterRecordsForSelectedFarm = useMemo(() => (allFarmsWaterData[selectedFarm] || []).filter(r => r.cycleId === selectedCycleId), [allFarmsWaterData, selectedFarm, selectedCycleId]);
+  
+  const allAuthorizedFarmsData = useMemo(() => {
+      if(!currentUser) return {};
+      return Object.fromEntries(Object.entries(allFarmsData).filter(([farmName]) => currentUser.authorizedFarms.includes(farmName)));
+  }, [currentUser, allFarmsData]);
 
-  const handleStartNewCycle = useCallback((cycleData: Omit<Cycle, 'id'>) => {
-      const newCycle: Cycle = {
-          ...cycleData,
-          id: new Date().toISOString(),
-      };
-      setCycles(prevCycles => [...prevCycles, newCycle]);
-      sendDataToGoogleSheet('Cycle_Start', { cycle: newCycle });
-  }, []);
+  const createAuthorizedFarmDataSelector = <T,>(allData: { [key: string]: T }) => useMemo(() => {
+    if(!currentUser) return {};
+    return Object.fromEntries(Object.entries(allData).filter(([farmName]) => currentUser.authorizedFarms.includes(farmName)));
+  }, [currentUser, allData]);
 
-  const handleUpdateFarmCycleDetails = useCallback((cycleId: string, farmName: string, details: { cropNo: string; startDate: string }) => {
-    setCycles(prevCycles =>
-        prevCycles.map(cycle => {
-            if (cycle.id !== cycleId) return cycle;
-            return {
-                ...cycle,
-                farms: cycle.farms.map(farm =>
-                    farm.farmName === farmName ? { ...farm, ...details } : farm
-                ),
-            };
-        })
-    );
-    sendDataToGoogleSheet('Cycle_UpdateFarmDetails', { cycleId, farmName, details, user: currentUser?.username });
-  }, [currentUser]);
+  const allAuthorizedFarmsWaterData = createAuthorizedFarmDataSelector(allFarmsWaterData);
+  const allAuthorizedFarmsChicksReceivingData = createAuthorizedFarmDataSelector(allFarmsChicksReceivingData);
+  const allAuthorizedFarmsWeeklyWeightData = createAuthorizedFarmDataSelector(allFarmsWeeklyWeightData);
+  const allAuthorizedFarmsChicksGradingData = createAuthorizedFarmDataSelector(allFarmsChicksGradingData);
+  const allAuthorizedFarmsFeedDeliveryData = createAuthorizedFarmDataSelector(allFarmsFeedDeliveryData);
+  const allAuthorizedFarmsCatchingDetailsData = createAuthorizedFarmDataSelector(allFarmsCatchingDetailsData);
+  const allAuthorizedFarmsSalmonellaData = createAuthorizedFarmDataSelector(allFarmsSalmonellaData);
 
-  const handleFinishFarmCycle = useCallback((cycleId: string, farmName: string, finishDate: string) => {
-      setCycles(prevCycles =>
-          prevCycles.map(cycle => {
-              if (cycle.id !== cycleId) return cycle;
-              return {
-                  ...cycle,
-                  farms: cycle.farms.map(farm =>
-                      farm.farmName === farmName ? { ...farm, finishDate } : farm
-                  ),
-              };
-          })
-      );
-      sendDataToGoogleSheet('Cycle_FinishFarm', { cycleId, farmName, finishDate });
-  }, []);
-
-  const handleReopenFarmCycle = useCallback((cycleId: string, farmName: string) => {
-    setCycles(prevCycles =>
-        prevCycles.map(cycle => {
-            if (cycle.id !== cycleId) return cycle;
-            const { finishDate, ...rest } = cycle.farms.find(f => f.farmName === farmName)!;
-            return {
-                ...cycle,
-                farms: cycle.farms.map(farm =>
-                    farm.farmName === farmName ? rest : farm
-                ),
-            };
-        })
-    );
-    sendDataToGoogleSheet('Cycle_ReopenFarm', { cycleId, farmName, user: currentUser?.username });
-  }, [currentUser]);
-
-  const verifyAdminPassword = useCallback((password: string): boolean => {
-    if (currentUser?.role !== 'Admin') return false;
-    return currentUser.password === password;
-  }, [currentUser]);
-
-  const handleLogin = useCallback((username: string, password: string): boolean => {
-    const user = users.find(u => u.username === username && u.password === password);
+  
+  // --- HANDLERS ---
+  const handleLogin = (username: string, password: string): boolean => {
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     if (user) {
+      if (isMaintenanceMode && user.role !== 'Admin') return false;
       setCurrentUser(user);
-      if (user.authorizedFarms.length > 0) {
+      if (user.role !== 'Gate Keeper' && user.authorizedFarms.length > 0) {
         setSelectedFarm(user.authorizedFarms[0]);
-      } else {
-        setSelectedFarm('');
       }
       return true;
     }
     return false;
-  }, [users]);
-
-  const handleLogout = useCallback(() => {
+  };
+  
+  const handleLogout = () => {
     setCurrentUser(null);
     setSelectedFarm('');
-  }, []);
+    setSelectedCycleId(null);
+  };
+  
+  const handleSelectFarm = (farmName: string) => setSelectedFarm(farmName);
+  const handleSelectCycle = (cycleId: string) => setSelectedCycleId(cycleId);
+  const handleMarkNotificationsAsRead = () => setNotifications(prev => prev.map(n => ({...n, read: true})));
 
-  // User management functions
-  const handleAddUser = useCallback((newUser: Omit<User, 'id'>) => {
-    const userWithId = { ...newUser, id: new Date().toISOString() };
-    setUsers(prevUsers => [...prevUsers, userWithId]);
-    // Log to Google Sheet without password
-    const { password, ...userToLog } = userWithId;
-    sendDataToGoogleSheet('User_Add', { user: userToLog });
-  }, []);
+  const handleAudit = <T,>(data: T): T & { meta: AuditInfo } => {
+    const meta = { updatedBy: currentUser?.name || 'System', updatedAt: new Date().toISOString() };
+    return { ...data, meta };
+  };
 
-  const handleUpdateUser = useCallback((updatedUser: User) => {
-    setUsers(prevUsers => prevUsers.map(user => user.id === updatedUser.id ? updatedUser : user));
-    // Log to Google Sheet without password
-    const { password, ...userToLog } = updatedUser;
-    sendDataToGoogleSheet('User_Update', { user: userToLog });
-  }, []);
+  const handleCreationAudit = <T,>(data: T): T & { meta: CreationAuditInfo } => {
+    const now = new Date().toISOString();
+    const name = currentUser?.name || 'System';
+    return { ...data, meta: { createdBy: name, createdAt: now, updatedBy: name, updatedAt: now } };
+  };
 
-  const handleDeleteUser = useCallback((userId: string) => {
-    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-    sendDataToGoogleSheet('User_Delete', { userId });
-  }, []);
-
-  // Employee management functions
-  const handleAddEmployee = useCallback((newEmployee: Omit<Employee, 'id'>) => {
-    const employeeWithId = { ...newEmployee, id: new Date().toISOString() + Math.random() };
-    setEmployees(prev => [...prev, employeeWithId].sort((a, b) => a.sN - b.sN));
-    sendDataToGoogleSheet('Employee_Add', { employee: employeeWithId });
-  }, []);
-
-  const handleUpdateEmployee = useCallback((updatedEmployee: Employee) => {
-    const oldEmployee = employees.find(emp => emp.id === updatedEmployee.id);
-    
-    if (currentUser?.role === 'Admin' && oldEmployee && oldEmployee.id !== currentUser.id) {
-        const hasChanged = Object.keys(updatedEmployee).some(key => {
-            if (key === 'id') return false;
-            const oldValue = oldEmployee[key as keyof Employee];
-            const newValue = updatedEmployee[key as keyof Employee];
-            const oldIsEmpty = oldValue === null || oldValue === undefined || oldValue === '';
-            const newIsEmpty = newValue === null || newValue === undefined || newValue === '';
-            if (oldIsEmpty && newIsEmpty) return false;
-            return oldValue !== newValue;
-        });
-
-        if (hasChanged) {
-            const newNotification: Notification = {
-                id: new Date().toISOString() + Math.random(),
-                message: `Admin updated details for employee: ${updatedEmployee.name} (Farm: ${updatedEmployee.farmNo}).`,
-                read: false,
-                timestamp: new Date().toISOString(),
-                targetRoles: ['Leadman', 'Supervisor'],
-                targetFarms: [updatedEmployee.farmNo],
-            };
-            setNotifications(prev => [newNotification, ...prev].slice(0, 20));
-        }
-    }
-
-    setEmployees(prev => prev.map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp).sort((a, b) => a.sN - b.sN));
-    sendDataToGoogleSheet('Employee_Update', { employee: updatedEmployee });
-  }, [currentUser, employees]);
-
-  const handleDeleteEmployee = useCallback((employeeId: string) => {
-    setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
-    sendDataToGoogleSheet('Employee_Delete', { employeeId });
-  }, []);
-
-  const handleBulkDeleteEmployees = useCallback((employeeIds: string[]) => {
-    setEmployees(prev => prev.filter(emp => !employeeIds.includes(emp.id)));
-    sendDataToGoogleSheet('Employee_BulkDelete', { employeeIds, user: currentUser?.username });
+  const handleUpdateData = useCallback((farmName: string, date: string, data: FarmDailyData) => {
+    // FIX: Add explicit types to sort callback parameters to prevent inference issues.
+    setAllFarmsData(prev => ({ ...prev, [farmName]: [...(prev[farmName] || []).filter(r => r.date !== date), handleAudit({ date, ...data })].sort((a: DailyReport, b: DailyReport) => a.date.localeCompare(b.date)) }));
   }, [currentUser]);
-  
-  const handleBulkImportEmployees = useCallback(async (csvData: string): Promise<{ success: boolean; message: string }> => {
-    try {
-        const lines = csvData.trim().replace(/\r\n/g, '\n').split('\n');
-        if (lines.length < 2) {
-            throw new Error("CSV file must have a header and at least one data row.");
-        }
 
-        const headerLine = lines.shift()!.trim().toLowerCase();
-        const headers = headerLine.split(',').map(h => h.trim().replace(/[^a-z0-9]/gi, ''));
-
-        const headerMap: { [key: string]: keyof Employee } = {
-            'sn': 'sN',
-            'gumboot': 'gumboot',
-            'uniform': 'uniform',
-            'jacket': 'jacket',
-            'cost': 'cost',
-            'comp': 'compNo',
-            'compno': 'compNo',
-            'sap': 'sapNo',
-            'sapno': 'sapNo',
-            'nameofthestaff': 'name',
-            'name': 'name',
-            'designation': 'designation',
-            'sponsor': 'sponsor',
-            'grade': 'grade',
-            'nationality': 'nationality',
-            'joiningdate': 'joiningDate',
-            'farm': 'farmNo',
-            'farmno': 'farmNo',
-            'area': 'area',
-            'iqamano': 'iqamaNo',
-            'iqamaexpiry': 'iqamaExpiry',
-            'passportno': 'passportNo',
-            'passportexpiry': 'passportExpiry',
-            'religion': 'religion',
-            'mobileno': 'mobileNo',
-        };
-        
-        const indices: { [key: string]: number } = {};
-        for(const key in headerMap) {
-            const index = headers.indexOf(key);
-            if (index !== -1) {
-                indices[headerMap[key]] = index;
-            }
-        }
-
-        if (indices['sapNo'] === undefined && indices['compNo'] === undefined) {
-            throw new Error("CSV must contain 'Sap #' or 'Comp #' column to identify employees.");
-        }
-
-        const existingSapNos = new Set(employees.map(e => e.sapNo));
-        const newEmployees: Employee[] = [];
-        let processedRows = 0;
-        let skippedRows = 0;
-
-        for (const line of lines) {
-            if (!line.trim()) continue;
-            const values = line.split(',');
-            
-            const sapNo = values[indices['sapNo']]?.trim();
-            if (!sapNo) {
-                console.warn(`Skipping row without SAP #: ${line}`);
-                skippedRows++;
-                continue;
-            }
-
-            if (existingSapNos.has(sapNo)) {
-                 console.warn(`Skipping duplicate employee with SAP #: ${sapNo}`);
-                 skippedRows++;
-                 continue;
-            }
-
-            const newEmployee: Partial<Employee> = { id: new Date().toISOString() + Math.random() };
-
-            for (const key in indices) {
-                const csvIndex = indices[key as keyof Employee];
-                if (values[csvIndex] !== undefined) {
-                    let value: string | number = values[csvIndex].trim();
-                    if (key === 'joiningDate' || key === 'iqamaExpiry' || key === 'passportExpiry') {
-                        value = formatDateToYMD(value as string);
-                    } else if (key === 'sN') {
-                        value = parseInt(value as string, 10) || 0;
-                    }
-                    (newEmployee as any)[key] = value;
-                }
-            }
-            
-            newEmployees.push(newEmployee as Employee);
-            existingSapNos.add(sapNo); // Add to set to handle duplicates within the same file
-            processedRows++;
-        }
-
-        if (processedRows === 0) {
-            throw new Error("No new, valid employee data found to import.");
-        }
-
-        setEmployees(prev => [...prev, ...newEmployees].sort((a,b) => a.sN - b.sN));
-        
-        const message = `Successfully imported ${processedRows} new employees. Skipped ${skippedRows} rows (duplicates or invalid).`;
-        return { success: true, message };
-
-    } catch (error) {
-        console.error("Bulk import failed:", error);
-        return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred." };
-    }
-  }, [employees]);
-
-  // Data Import/Export
-  const handleExportData = useCallback(() => {
-    const appState = {
-        users,
-        allFarmsData,
-        allFarmsFeedOrders,
-        allFarmsChicksReceivingData,
-        allFarmsWeeklyWeightData,
-        allFarmsChicksGradingData,
-        allFarmsFeedDeliveryData,
-        allFarmsCatchingDetailsData,
-        allFarmsSalmonellaData,
-        catchingProgramEntries,
-        dieselOrders,
-        submittedFeedOrders,
-        cycles,
-        notifications,
-        leaveRequests,
-        septicTankRequests,
-        employees,
-        feedBulkerRecords,
-        vehicleMovementLogs,
-        inChargeTimeLogs,
-        isMaintenanceMode,
-      };
-    const dataStr = JSON.stringify(appState, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const date = new Date().toISOString().split('T')[0];
-    link.download = `poultry-farm-data-backup-${date}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [
-    users,
-    allFarmsData,
-    allFarmsFeedOrders,
-    allFarmsChicksReceivingData,
-    allFarmsWeeklyWeightData,
-    allFarmsChicksGradingData,
-    allFarmsFeedDeliveryData,
-    allFarmsCatchingDetailsData,
-    allFarmsSalmonellaData,
-    catchingProgramEntries,
-    dieselOrders,
-    submittedFeedOrders,
-    cycles,
-    notifications,
-    leaveRequests,
-    septicTankRequests,
-    employees,
-    feedBulkerRecords,
-    vehicleMovementLogs,
-    inChargeTimeLogs,
-    isMaintenanceMode,
-  ]);
-
-  const handleImportData = useCallback(async (jsonData: string): Promise<boolean> => {
-    try {
-        const importedState = JSON.parse(jsonData);
-        
-        if (!importedState || typeof importedState !== 'object') {
-            throw new Error("Invalid file format.");
-        }
-        
-        // Merge imported users with the initial users to ensure new roles are always present.
-        const importedUsers: User[] = importedState.users || [];
-        // Create a map of the default users for easy lookup and update, using username as the key.
-        const mergedUserMap = new Map(INITIAL_USERS.map(u => [u.username, u]));
-
-        // Iterate through imported users. Update existing ones or add new ones.
-        for (const importedUser of importedUsers) {
-            // Use the username as the unique key for merging.
-            // This will overwrite defaults with imported data if usernames match,
-            // and add any new users from the import file.
-            mergedUserMap.set(importedUser.username, { ...(mergedUserMap.get(importedUser.username) || {}), ...importedUser });
-        }
-        
-        setUsers(Array.from(mergedUserMap.values()));
-        
-        const importedCycles = importedState.cycles || [];
-
-        // Apply non-migratable data
-        setAllFarmsData(importedState.allFarmsData || getInitialData());
-        setAllFarmsFeedOrders(importedState.allFarmsFeedOrders || getInitialFeedOrderData());
-        setAllFarmsFeedDeliveryData(importedState.allFarmsFeedDeliveryData || getInitialFeedDeliveryData());
-        setCatchingProgramEntries(importedState.catchingProgramEntries || []);
-        setDieselOrders(importedState.dieselOrders || []);
-        setSubmittedFeedOrders(importedState.submittedFeedOrders || []);
-        setCycles(importedCycles);
-        setNotifications(importedState.notifications || []);
-        setLeaveRequests(importedState.leaveRequests || []);
-        setSepticTankRequests(importedState.septicTankRequests || []);
-        setEmployees(importedState.employees || INITIAL_EMPLOYEES);
-        setFeedBulkerRecords(importedState.feedBulkerRecords || []);
-        setVehicleMovementLogs(importedState.vehicleMovementLogs || []);
-        setInChargeTimeLogs(importedState.inChargeTimeLogs || []);
-        setIsMaintenanceMode(importedState.isMaintenanceMode || false);
-
-        // Apply migratable data with checks
-        const chicksData = needsMigration(importedState.allFarmsChicksReceivingData)
-            ? migratePerCycleData(importedState.allFarmsChicksReceivingData, importedCycles)
-            : importedState.allFarmsChicksReceivingData;
-        setAllFarmsChicksReceivingData(chicksData || getInitialChicksReceivingData());
-
-        const weeklyWeightData = needsMigration(importedState.allFarmsWeeklyWeightData)
-            ? migratePerCycleData(importedState.allFarmsWeeklyWeightData, importedCycles)
-            : importedState.allFarmsWeeklyWeightData;
-        setAllFarmsWeeklyWeightData(weeklyWeightData || getInitialWeeklyWeightData());
-
-        const chicksGradingData = needsMigration(importedState.allFarmsChicksGradingData)
-            ? migratePerCycleData(importedState.allFarmsChicksGradingData, importedCycles)
-            : importedState.allFarmsChicksGradingData;
-        setAllFarmsChicksGradingData(chicksGradingData || getInitialChicksGradingData());
-
-        const catchingData = needsMigration(importedState.allFarmsCatchingDetailsData)
-            ? migratePerCycleData(importedState.allFarmsCatchingDetailsData, importedCycles)
-            : importedState.allFarmsCatchingDetailsData;
-        setAllFarmsCatchingDetailsData(catchingData || getInitialCatchingDetailsData());
-
-        const salmonellaData = needsMigration(importedState.allFarmsSalmonellaData)
-            ? migratePerCycleData(importedState.allFarmsSalmonellaData, importedCycles)
-            : importedState.allFarmsSalmonellaData;
-        setAllFarmsSalmonellaData(salmonellaData || getInitialSalmonellaData());
-
-        return true;
-    } catch (error) {
-        console.error("Failed to import data:", error);
-        return false;
-    }
-  }, []);
-  
-  const handleBulkImportChicksReceiving = useCallback(async (csvData: string): Promise<{ success: boolean; message: string }> => {
-    try {
-        const lines = csvData.trim().replace(/\r\n/g, '\n').split('\n');
-        if (lines.length < 2) {
-            throw new Error("CSV file must have a header and at least one data row.");
-        }
-
-        const headerLine = lines.shift()!.trim().toLowerCase();
-        const headers = headerLine.split(',').map(h => h.trim().replace(/[^a-z0-9]/gi, ''));
-
-        const headerMap: { [key: string]: keyof ChicksReceivingHouseData | 'farm' | 'houseNo' } = {
-            'farm': 'farm',
-            'house': 'houseNo',
-            'flock': 'flock',
-            'breed': 'breed',
-            'flockno': 'flockNo',
-            'flockage': 'flockAge',
-            'hatcheryno': 'hatcheryNo',
-            'productionorderno': 'productionOrderNo',
-            'placementdate': 'placementDate',
-            'noofbox': 'noOfBox',
-            'perboxchicks': 'perBoxChicks',
-            'extrachicks': 'extraChicks',
-            'doa': 'doa',
-            'trialorcontrol': 'trialOrControl',
-            '0dayweightg': 'zeroDayWeight',
-            'zerodayweight': 'zeroDayWeight',
-            'uniformity': 'uniformityPercent',
-            'uniformitypercent': 'uniformityPercent',
-        };
-        
-        const indices: { [key: string]: number } = {};
-        for(const key in headerMap) {
-            const index = headers.indexOf(key);
-            if (index !== -1) {
-                indices[headerMap[key]] = index;
-            }
-        }
-        
-        // If 'house' header was not found, but 'flock' was, use 'flock' for the house number.
-        if (indices['houseNo'] === undefined && indices['flock'] !== undefined) {
-            indices['houseNo'] = indices['flock'];
-            // Unset flock property mapping since the header is now used for house number.
-            delete indices['flock'];
-        }
-
-        if (indices['farm'] === undefined || indices['houseNo'] === undefined) {
-            throw new Error("CSV must contain 'Farm' and 'House' (or 'Flock') columns.");
-        }
-
-        const newAllFarmsChicksReceivingData = JSON.parse(JSON.stringify(allFarmsChicksReceivingData));
-        
-        let processedRows = 0;
-        const affectedFarms = new Set<string>();
-
-        for (const line of lines) {
-            if (!line.trim()) continue;
-            const values = line.split(',');
-
-            const farmName = values[indices['farm']].trim();
-            const houseNo = parseInt(values[indices['houseNo']].trim(), 10);
-
-            if (!farmName || isNaN(houseNo) || houseNo < 1) {
-                console.warn(`Skipping invalid row: ${line}`);
-                continue;
-            }
-            
-            const activeFarmCycle = cycles
-                .filter(c => c.farms.some(f => f.farmName === farmName && !f.finishDate))
-                .sort((a, b) => b.id.localeCompare(a.id))[0];
-
-            if (!activeFarmCycle) {
-                console.warn(`Skipping row for farm ${farmName} as no active cycle was found.`);
-                continue;
-            }
-            const cycleId = activeFarmCycle.id;
-            const houseIndex = houseNo - 1;
-            const houseCount = getHouseCountForFarm(farmName);
-            if (houseIndex >= houseCount) {
-                 console.warn(`Skipping row for farm ${farmName}, house ${houseNo} exceeds max house count of ${houseCount}.`);
-                 continue;
-            }
-
-            if (!newAllFarmsChicksReceivingData[farmName]) {
-                newAllFarmsChicksReceivingData[farmName] = [];
-            }
-            let cycleRecord = newAllFarmsChicksReceivingData[farmName].find((d: ChicksReceivingData) => d.cycleId === cycleId);
-            if (!cycleRecord) {
-                const farmCycleDetails = activeFarmCycle.farms.find(f => f.farmName === farmName)!;
-                cycleRecord = createEmptyChicksReceivingDataForFarm(farmName, cycleId);
-                cycleRecord.cycleNo = activeFarmCycle.cycleNo;
-                cycleRecord.cropNo = farmCycleDetails.cropNo;
-                newAllFarmsChicksReceivingData[farmName].push(cycleRecord);
-            }
-            
-            const updatedHouse = cycleRecord.houses[houseIndex];
-
-            for (const key in indices) {
-                if (key !== 'farm' && key !== 'houseNo') {
-                    const csvIndex = indices[key];
-                    if (values[csvIndex] !== undefined) {
-                        let value = values[csvIndex].trim();
-                        if (key === 'placementDate') {
-                            value = formatDateToYMD(value);
-                        }
-                        (updatedHouse as any)[key] = value;
-                    }
-                }
-            }
-            
-            const noOfBox = parseFloat(updatedHouse.noOfBox) || 0;
-            const perBoxChicks = parseFloat(updatedHouse.perBoxChicks) || 0;
-            const extraChicks = parseFloat(updatedHouse.extraChicks) || 0;
-            const doa = parseFloat(updatedHouse.doa) || 0;
-            updatedHouse.grossChicksPlaced = ((noOfBox * perBoxChicks) + extraChicks).toString();
-            updatedHouse.netChicksPlaced = (((noOfBox * perBoxChicks) + extraChicks) - doa).toString();
-            updatedHouse.productionLine = PRODUCTION_LINE_MAP[farmName] || '';
-
-            processedRows++;
-            affectedFarms.add(farmName);
-        }
-
-        if (processedRows === 0) {
-            throw new Error("No valid data rows found to import.");
-        }
-
-        setAllFarmsChicksReceivingData(newAllFarmsChicksReceivingData);
-        
-        return { success: true, message: `Successfully imported ${processedRows} records for farms: ${Array.from(affectedFarms).join(', ')}.` };
-
-    } catch (error) {
-        console.error("Bulk import failed:", error);
-        return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred." };
-    }
-}, [allFarmsChicksReceivingData, cycles]);
-
-
-  const handleToggleMaintenanceMode = useCallback((password: string): { success: boolean, message: string } => {
-    if (currentUser?.role !== 'Admin' || !verifyAdminPassword(password)) {
-      return { success: false, message: 'Invalid admin password.' };
-    }
-    const newMode = !isMaintenanceMode;
-    setIsMaintenanceMode(newMode);
-    sendDataToGoogleSheet('MaintenanceMode_Toggle', { enabled: newMode, user: currentUser.username });
-    return { success: true, message: `Maintenance mode has been ${newMode ? 'enabled' : 'disabled'}.` };
-  }, [isMaintenanceMode, currentUser, verifyAdminPassword]);
-
-
-  // When user changes, if the current selected farm is not in their new list, select the first one.
-  useEffect(() => {
-    if (currentUser && currentUser.role !== 'Gate Keeper' && !currentUser.authorizedFarms.includes(selectedFarm)) {
-      if (currentUser.authorizedFarms.length > 0) {
-        setSelectedFarm(currentUser.authorizedFarms[0]);
-      } else {
-        setSelectedFarm('');
-      }
-    }
-  }, [currentUser, selectedFarm]);
-
-  const handleDataUpdate = useCallback((farmName: string, date: string, updatedData: FarmDailyData) => {
-    const meta = {
-      updatedBy: currentUser?.username || 'system',
-      updatedAt: new Date().toISOString()
-    };
-    
-    setAllFarmsData(prevData => {
-      const farmReports = prevData[farmName] ? [...prevData[farmName]] : [];
-      const reportIndex = farmReports.findIndex(report => report.date === date);
-      
-      const reportWithMeta: DailyReport = { ...updatedData, date, meta };
-
-      if (reportIndex > -1) {
-        // Update existing report
-        farmReports[reportIndex] = reportWithMeta;
-      } else {
-        // Add new report
-        farmReports.push(reportWithMeta);
-        // Keep it sorted by date
-        farmReports.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      }
-      
-      return {
-        ...prevData,
-        [farmName]: farmReports,
-      };
-    });
-    sendDataToGoogleSheet('DailyReport_Update', { farmName, date, data: updatedData, meta, user: currentUser?.username });
+  const handleUpdateWaterRecord = useCallback((farmName: string, record: Omit<DailyWaterRecord, 'meta'>) => {
+      setAllFarmsWaterData(prev => {
+          const updatedRecord = handleAudit(record);
+          const farmRecords = (prev[farmName] || []).filter(r => !(r.date === record.date && r.cycleId === record.cycleId));
+          return {
+              ...prev,
+              [farmName]: [...farmRecords, updatedRecord].sort((a,b) => a.date.localeCompare(b.date))
+          };
+      });
   }, [currentUser]);
 
   const handleBulkUpdateDailyReports = useCallback((farmName: string, updates: { [date: string]: FarmDailyData }) => {
-    const meta = {
-      updatedBy: currentUser?.username || 'system',
-      updatedAt: new Date().toISOString()
-    };
-
-    setAllFarmsData(prevData => {
-      const farmReports = prevData[farmName] ? [...prevData[farmName]] : [];
-      const reportsMap = new Map(farmReports.map(r => [r.date, r]));
-
-      for (const [date, updatedData] of Object.entries(updates)) {
-        reportsMap.set(date, { ...updatedData, date, meta });
-        // Also send individual updates to the backend
-        sendDataToGoogleSheet('DailyReport_Update', { farmName, date, data: updatedData, meta, user: currentUser?.username });
-      }
-
-      const newFarmReports = Array.from(reportsMap.values())
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      return {
-        ...prevData,
-        [farmName]: newFarmReports,
-      };
-    });
-  }, [currentUser]);
-
-  const handleFeedDeliveryUpdate = useCallback((farmName: string, date: string, updatedData: FeedDeliveryRecordData, cycleId: string) => {
-    setAllFarmsFeedDeliveryData(prevData => {
-        const farmRecords = prevData[farmName] ? [...prevData[farmName]] : [];
-        const recordIndex = farmRecords.findIndex(record => record.date === date);
-
-        if (recordIndex > -1) {
-            // Merge new data with existing data for the day
-            const existingRecord = farmRecords[recordIndex];
-            const mergedHouses = existingRecord.houses.map((house, index) => {
-                const newHouseData = updatedData.houses[index];
-                if (!newHouseData) return house;
-
-                return {
-                    starter: String(Number(house.starter || 0) + Number(newHouseData.starter || 0)),
-                    growerCR: String(Number(house.growerCR || 0) + Number(newHouseData.growerCR || 0)),
-                    growerPL: String(Number(house.growerPL || 0) + Number(newHouseData.growerPL || 0)),
-                    finisher: String(Number(house.finisher || 0) + Number(newHouseData.finisher || 0)),
-                };
-            });
-            farmRecords[recordIndex] = { ...existingRecord, houses: mergedHouses, cycleId: existingRecord.cycleId || cycleId };
-        } else {
-            farmRecords.push({ ...updatedData, date, cycleId });
-            farmRecords.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    setAllFarmsData(prev => {
+        const existingReports = new Map((prev[farmName] || []).map(r => [r.date, r]));
+        for (const [date, data] of Object.entries(updates)) {
+            existingReports.set(date, handleAudit({ date, ...data }));
         }
-
-        return {
-            ...prevData,
-            [farmName]: farmRecords,
-        };
+        // FIX: Add explicit types to sort callback parameters to prevent inference issues.
+        const newReports = Array.from(existingReports.values()).sort((a: DailyReport, b: DailyReport) => a.date.localeCompare(b.date));
+        return { ...prev, [farmName]: newReports };
     });
-    sendDataToGoogleSheet('FeedDelivery_Update', { farmName, date, data: updatedData, user: currentUser?.username, cycleId });
   }, [currentUser]);
-  
-  const handleAddSubmittedFeedOrder = useCallback((farmName: string, orderData: FeedOrderData) => {
-    if (!selectedFarmCycleDetails) {
-        console.error("Cannot submit feed order: no cycle selected.");
-        return;
-    }
+
+  const handleUpdateCycleSpecificData = <T extends {cycleId: string}>(
+    setter: React.Dispatch<React.SetStateAction<{ [farmName: string]: T[] }>>,
+    farmName: string,
+    data: T
+  ) => {
+    setter(prev => {
+      const farmData = [...(prev[farmName] || []).filter(d => d.cycleId !== data.cycleId)];
+      farmData.push(handleAudit(data));
+      return { ...prev, [farmName]: farmData };
+    });
+  };
+
+  const handleUpdateChicksReceiving = useCallback((farmName: string, data: ChicksReceivingData) => handleUpdateCycleSpecificData(setAllFarmsChicksReceivingData, farmName, data), [currentUser]);
+  const handleUpdateWeeklyWeight = useCallback((farmName: string, data: WeeklyWeightData) => handleUpdateCycleSpecificData(setAllFarmsWeeklyWeightData, farmName, data), [currentUser]);
+  const handleUpdateChicksGrading = useCallback((farmName: string, data: ChicksGradingData) => handleUpdateCycleSpecificData(setAllFarmsChicksGradingData, farmName, data), [currentUser]);
+  const handleUpdateCatchingDetails = useCallback((farmName: string, data: CatchingDetailsData) => handleUpdateCycleSpecificData(setAllFarmsCatchingDetailsData, farmName, data), [currentUser]);
+  const handleUpdateSalmonella = useCallback((farmName: string, data: SalmonellaData) => handleUpdateCycleSpecificData(setAllFarmsSalmonellaData, farmName, data), [currentUser]);
+
+  const handleAddSubmittedFeedOrder = useCallback((farmName: string, data: FeedOrderData) => {
     const newOrder: SubmittedFeedOrder = {
-        ...orderData,
+        ...data,
         id: new Date().toISOString() + Math.random(),
         farmName,
         status: 'Submitted',
-        cycleId: selectedFarmCycleDetails.cycleId,
+        cycleId: selectedCycleId!,
     };
-    setSubmittedFeedOrders(prevOrders => [newOrder, ...prevOrders]);
-
-    // Reset the form for that farm after submission
-    const houseCount = getHouseCountForFarm(farmName);
-    const emptyFeedOrderItems: FeedOrderItem[] = Array.from({ length: houseCount }, (_, i) => ({
-        houseNo: i + 1,
-        deliveryDate: '',
-        age: '',
-        feedType: '',
-        quantity: '',
-    }));
-    const emptyFeedOrder: FeedOrderData = {
-        orderDate: '',
-        deliveryDate: '',
-        feedMillNo: '',
-        items: emptyFeedOrderItems,
-        remarks: '',
-        priority: 'Normal',
-    };
-
-    setAllFarmsFeedOrders(prevData => ({
-        ...prevData,
-        [farmName]: emptyFeedOrder
-    }));
-    
-    // Add notification for admin/supervisors
-    const newNotification: Notification = {
-      id: new Date().toISOString(),
-      message: `Feed order received from ${farmName}.`,
-      read: false,
-      timestamp: new Date().toISOString(),
-      targetRoles: ['Admin', 'Supervisor'],
-    };
-    setNotifications(prev => [newNotification, ...prev].slice(0, 20)); // Keep last 20
-
-    sendDataToGoogleSheet('FeedOrder_Submit', { order: newOrder, user: currentUser?.username });
-
-  }, [currentUser, selectedFarmCycleDetails]);
+    setSubmittedFeedOrders(prev => [...prev, handleCreationAudit(newOrder)]);
+    setEditingFeedOrderId(null);
+  }, [currentUser, selectedCycleId]);
 
   const handleUpdateSubmittedFeedOrder = useCallback((orderId: string, farmName: string, data: FeedOrderData) => {
-    setSubmittedFeedOrders(prevOrders =>
-      prevOrders.map(order => {
-        if (order.id !== orderId) return order;
+      setSubmittedFeedOrders(prev => prev.map(order => order.id === orderId ? handleAudit({ ...order, ...data }) : order));
+      setEditingFeedOrderId(null);
+  }, [currentUser]);
 
-        if (currentUser?.role === 'Admin') {
-            const oldItems = order.items || [];
-            const newItems = data.items || [];
-            const addedStoNumbers: { houseNo: number; stoNo: string }[] = [];
+  const handleStartEditingFeedOrder = (order: SubmittedFeedOrder) => {
+      const orderData = { orderDate: order.orderDate, deliveryDate: order.deliveryDate, feedMillNo: order.feedMillNo, items: order.items, remarks: order.remarks, priority: order.priority };
+      setAllFarmsFeedOrders(prev => ({ ...prev, [order.farmName]: orderData }));
+      setEditingFeedOrderId(order.id);
+  };
 
-            newItems.forEach((newItem, index) => {
-                const oldItem = oldItems[index];
-                if (newItem.stoNo && (!oldItem || !oldItem.stoNo)) {
-                    if (newItem.quantity && parseFloat(newItem.quantity) > 0) {
-                        addedStoNumbers.push({ houseNo: newItem.houseNo, stoNo: newItem.stoNo });
-                    }
-                }
-            });
+  const handleCancelEditingFeedOrder = () => setEditingFeedOrderId(null);
 
-            if (addedStoNumbers.length > 0) {
-                const stoDetails = addedStoNumbers.map(s => `H${s.houseNo}: ${s.stoNo}`).join(', ');
-                const newNotification: Notification = {
-                    id: new Date().toISOString() + Math.random(),
-                    message: `STO Number added for ${farmName} feed order: ${stoDetails}.`,
-                    read: false,
-                    timestamp: new Date().toISOString(),
-                    targetRoles: ['Leadman', 'Supervisor'],
-                    targetFarms: [farmName],
-                };
-                setNotifications(prev => [newNotification, ...prev].slice(0, 20));
-            }
-        }
+  const handleConfirmFeedDelivery = useCallback((orderId: string, actualDeliveryDate: string, deliveryData: FeedDeliveryRecordData) => {
+    const now = new Date().toISOString();
+    const name = currentUser?.name || 'System';
 
-        const updatedOrderPayload: SubmittedFeedOrder = {
-          ...order, // preserve original cycleId, deliveredQuantities, etc.
-          ...data, // apply changes from form
-          status: 'Submitted', // status is always 'Submitted' on an edit
-        };
-
-        // If after merging, there's still no cycleId (it was an old order), assign the current cycle.
-        if (!updatedOrderPayload.cycleId && selectedFarmCycleDetails) {
-            updatedOrderPayload.cycleId = selectedFarmCycleDetails.cycleId;
-        }
-        
-        sendDataToGoogleSheet('FeedOrder_Update', { order: updatedOrderPayload, user: currentUser?.username });
-        return updatedOrderPayload;
-      })
-    );
-  }, [currentUser, selectedFarmCycleDetails]);
-
-  const handleStartEditingFeedOrder = useCallback((order: SubmittedFeedOrder) => {
-    const { id, farmName, status, cycleId, actualDeliveryDate, deliveredQuantities, ...orderData } = order;
-
-    setAllFarmsFeedOrders(prev => ({
-        ...prev,
-        [farmName]: orderData as FeedOrderData
-    }));
-
-    setEditingFeedOrderId(id);
-  }, []);
-
-  const handleCancelEditingFeedOrder = useCallback(() => {
-    if (!editingFeedOrderId) return;
+    setSubmittedFeedOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Delivered', actualDeliveryDate, deliveredQuantities: deliveryData, meta: { ...o.meta, updatedBy: name, updatedAt: now } } : o));
     
-    const orderBeingEdited = submittedFeedOrders.find(o => o.id === editingFeedOrderId);
-    const farmName = orderBeingEdited?.farmName;
+    const order = submittedFeedOrders.find(o => o.id === orderId);
+    if (!order) return;
 
-    if (farmName) {
-        const houseCount = getHouseCountForFarm(farmName);
-        const emptyFeedOrderItems: FeedOrderItem[] = Array.from({ length: houseCount }, (_, i) => ({
-            houseNo: i + 1, deliveryDate: '', age: '', feedType: '', quantity: '',
-        }));
-        const emptyFeedOrder: FeedOrderData = {
-            orderDate: '', deliveryDate: '', feedMillNo: '', items: emptyFeedOrderItems, remarks: '', priority: 'Normal',
-        };
-        setAllFarmsFeedOrders(prevData => ({ ...prevData, [farmName]: emptyFeedOrder }));
-    }
-    
-    setEditingFeedOrderId(null);
-  }, [editingFeedOrderId, submittedFeedOrders]);
-
-
-  const handleConfirmFeedDelivery = useCallback((
-    orderId: string,
-    actualDeliveryDate: string,
-    deliveryData: FeedDeliveryRecordData
-  ) => {
-    const orderToUpdate = submittedFeedOrders.find(o => o.id === orderId);
-    if (!orderToUpdate) return;
-
-    // 1. Update the order status and store delivered quantities
-    setSubmittedFeedOrders(prevOrders =>
-        prevOrders.map(order =>
-            order.id === orderId ? { 
-                ...order, 
-                status: 'Delivered', 
-                actualDeliveryDate,
-                deliveredQuantities: deliveryData 
-            } : order
-        )
-    );
-    sendDataToGoogleSheet('FeedOrder_Confirm', { orderId, farmName: orderToUpdate.farmName, actualDeliveryDate, deliveredQuantities: deliveryData, user: currentUser?.username });
-
-    // 2. Add/update the feed delivery record
-    handleFeedDeliveryUpdate(orderToUpdate.farmName, actualDeliveryDate, deliveryData, orderToUpdate.cycleId);
-  }, [submittedFeedOrders, handleFeedDeliveryUpdate, currentUser]);
-
-  const handleUpdateConfirmedFeedDelivery = useCallback((
-    orderId: string,
-    newActualDeliveryDate: string,
-    newDeliveryData: FeedDeliveryRecordData
-  ) => {
-    const orderToUpdate = submittedFeedOrders.find(o => o.id === orderId);
-    if (!orderToUpdate || !orderToUpdate.actualDeliveryDate || !orderToUpdate.deliveredQuantities) {
-      console.error("Cannot update delivery for an order without existing delivery data.");
-      return;
-    }
-    
-    const { farmName, actualDeliveryDate: oldActualDeliveryDate, deliveredQuantities: oldDeliveryData, cycleId } = orderToUpdate;
-
-    // Update allFarmsFeedDeliveryData by subtracting old and adding new
-    setAllFarmsFeedDeliveryData(prevData => {
-      const allRecords = { ...prevData };
-      const farmRecords = [...(allRecords[farmName] || [])];
-      
-      const recordsMap = new Map(farmRecords.map(r => [r.date, JSON.parse(JSON.stringify(r))]));
-
-      // Subtract old data
-      if (recordsMap.has(oldActualDeliveryDate)) {
-          const record = recordsMap.get(oldActualDeliveryDate)!;
-          record.houses = record.houses.map((house, index) => {
-              const oldHouseData = oldDeliveryData.houses[index];
-              return {
-                  starter: String(Number(house.starter || 0) - Number(oldHouseData?.starter || 0)),
-                  growerCR: String(Number(house.growerCR || 0) - Number(oldHouseData?.growerCR || 0)),
-                  growerPL: String(Number(house.growerPL || 0) - Number(oldHouseData?.growerPL || 0)),
-                  finisher: String(Number(house.finisher || 0) - Number(oldHouseData?.finisher || 0)),
-              };
-          });
-      }
-      
-      // Add new data
-      let newRecord = recordsMap.get(newActualDeliveryDate);
-      if (newRecord) {
-        newRecord.cycleId = newRecord.cycleId || cycleId;
-      } else {
-        newRecord = { date: newActualDeliveryDate, cycleId, ...createEmptyFeedDeliveryRecord(getHouseCountForFarm(farmName)) };
-      }
-
-      newRecord.houses = newRecord.houses.map((house, index) => {
-          const newHouseData = newDeliveryData.houses[index];
-          return {
-              starter: String(Number(house.starter || 0) + Number(newHouseData?.starter || 0)),
-              growerCR: String(Number(house.growerCR || 0) + Number(newHouseData?.growerCR || 0)),
-              growerPL: String(Number(house.growerPL || 0) + Number(newHouseData?.growerPL || 0)),
-              finisher: String(Number(house.finisher || 0) + Number(newHouseData?.finisher || 0)),
-          };
-      });
-      recordsMap.set(newActualDeliveryDate, newRecord);
-
-      const newFarmReports = Array.from(recordsMap.values())
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      allRecords[farmName] = newFarmReports;
-      return allRecords;
+    const newRecord: FeedDeliveryRecord = { date: actualDeliveryDate, cycleId: order.cycleId, ...deliveryData, meta: { updatedBy: name, updatedAt: now } };
+    setAllFarmsFeedDeliveryData(prev => {
+        const farmRecords = (prev[order.farmName] || []).filter(r => r.date !== actualDeliveryDate); // Avoid duplicates on same day
+        // FIX: Add explicit types to sort callback parameters to prevent inference issues.
+        return { ...prev, [order.farmName]: [...farmRecords, newRecord].sort((a: FeedDeliveryRecord, b: FeedDeliveryRecord) => a.date.localeCompare(b.date)) };
     });
-    
-    // Update the submitted order itself
-    setSubmittedFeedOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.id === orderId ? { 
-            ...order, 
-            actualDeliveryDate: newActualDeliveryDate,
-            deliveredQuantities: newDeliveryData
-        } : order
-      )
-    );
-    
-    sendDataToGoogleSheet('FeedOrder_UpdateDelivery', { orderId, farmName, newActualDeliveryDate, newDeliveryData, user: currentUser?.username });
+  }, [currentUser, submittedFeedOrders]);
 
-  }, [submittedFeedOrders, currentUser]);
+  const handleUpdateConfirmedFeedDelivery = useCallback((orderId: string, actualDeliveryDate: string, deliveryData: FeedDeliveryRecordData) => {
+      handleConfirmFeedDelivery(orderId, actualDeliveryDate, deliveryData); // Same logic for update
+  }, [handleConfirmFeedDelivery]);
 
-  const handleChicksReceivingUpdate = useCallback((farmName: string, updatedData: ChicksReceivingData) => {
-    if (!selectedFarmCycleDetails) return;
-    const { cycleId } = selectedFarmCycleDetails;
-    
-    setAllFarmsChicksReceivingData(prevData => {
-        const farmArray = prevData[farmName] ? [...prevData[farmName]] : [];
-        const recordIndex = farmArray.findIndex(r => r.cycleId === cycleId);
-        const oldRecord = recordIndex > -1 ? farmArray[recordIndex] : null;
-
-        if (currentUser?.role === 'Admin' && oldRecord) {
-            const additionalDetailFields: (keyof ChicksReceivingHouseData)[] = ['breed', 'flock', 'flockNo', 'flockAge', 'hatcheryNo', 'productionOrderNo', 'trialOrControl'];
-            const newlyAddedDetails: { houseNo: number; details: string[] }[] = [];
-
-            updatedData.houses.forEach((newHouse, index) => {
-                const oldHouse = oldRecord.houses[index];
-                const added: string[] = [];
-                if (oldHouse) {
-                    additionalDetailFields.forEach(field => {
-                        if (newHouse[field] && !oldHouse[field]) {
-                            added.push(field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()));
-                        }
-                    });
-                }
-                if (added.length > 0) {
-                    newlyAddedDetails.push({ houseNo: index + 1, details: added });
-                }
-            });
-
-            if (newlyAddedDetails.length > 0) {
-                const detailsSummary = newlyAddedDetails.map(d => `H${d.houseNo}`).join(', ');
-                const newNotification: Notification = {
-                    id: new Date().toISOString() + Math.random(),
-                    message: `Admin added additional chicks receiving details for ${farmName} (Houses: ${detailsSummary}).`,
-                    read: false,
-                    timestamp: new Date().toISOString(),
-                    targetRoles: ['Leadman', 'Supervisor'],
-                    targetFarms: [farmName],
-                };
-                setNotifications(prev => [newNotification, ...prev].slice(0, 20));
-            }
-        }
-
-        const dataWithCorrectCycleId = { ...updatedData, cycleId };
-        if (recordIndex > -1) {
-            farmArray[recordIndex] = dataWithCorrectCycleId;
-        } else {
-            farmArray.push(dataWithCorrectCycleId);
-        }
-        return { ...prevData, [farmName]: farmArray };
-    });
-
-    const { cycleId: _cycleId, ...dataToSend } = updatedData;
-    sendDataToGoogleSheet('ChicksReceiving_Update', { farmName, cycleId, data: dataToSend, user: currentUser?.username });
-  }, [currentUser, selectedFarmCycleDetails]);
-
-  const handleWeeklyWeightUpdate = useCallback((farmName: string, updatedData: WeeklyWeightData) => {
-    if (!selectedFarmCycleDetails) return;
-    const { cycleId } = selectedFarmCycleDetails;
-
-    setAllFarmsWeeklyWeightData(prevData => {
-        const farmArray = prevData[farmName] ? [...prevData[farmName]] : [];
-        const recordIndex = farmArray.findIndex(r => r.cycleId === cycleId);
-        const dataWithCorrectCycleId = { ...updatedData, cycleId };
-
-        if (recordIndex > -1) {
-            farmArray[recordIndex] = dataWithCorrectCycleId;
-        } else {
-            farmArray.push(dataWithCorrectCycleId);
-        }
-        return { ...prevData, [farmName]: farmArray };
-    });
-    
-    const { cycleId: _cycleId, ...dataToSend } = updatedData;
-    sendDataToGoogleSheet('WeeklyWeight_Update', { farmName, cycleId, data: dataToSend, user: currentUser?.username });
-  }, [currentUser, selectedFarmCycleDetails]);
-
-  const handleChicksGradingUpdate = useCallback((farmName: string, updatedData: ChicksGradingData) => {
-    if (!selectedFarmCycleDetails) return;
-    const { cycleId } = selectedFarmCycleDetails;
-    
-    setAllFarmsChicksGradingData(prevData => {
-        const farmArray = prevData[farmName] ? [...prevData[farmName]] : [];
-        const recordIndex = farmArray.findIndex(r => r.cycleId === cycleId);
-        const dataWithCorrectCycleId = { ...updatedData, cycleId };
-
-        if (recordIndex > -1) {
-            farmArray[recordIndex] = dataWithCorrectCycleId;
-        } else {
-            farmArray.push(dataWithCorrectCycleId);
-        }
-        return { ...prevData, [farmName]: farmArray };
-    });
-
-    const { cycleId: _cycleId, ...dataToSend } = updatedData;
-    sendDataToGoogleSheet('ChicksGrading_Update', { farmName, cycleId, data: dataToSend, user: currentUser?.username });
-  }, [currentUser, selectedFarmCycleDetails]);
-
-  const handleUpdateCatchingDetails = useCallback((farmName: string, updatedData: CatchingDetailsData) => {
-    if (!selectedFarmCycleDetails) return;
-    const { cycleId } = selectedFarmCycleDetails;
-
-    setAllFarmsCatchingDetailsData(prevData => {
-        const farmArray = prevData[farmName] ? [...prevData[farmName]] : [];
-        const recordIndex = farmArray.findIndex(r => r.cycleId === cycleId);
-        const dataWithCorrectCycleId = { ...updatedData, cycleId };
-        
-        if (recordIndex > -1) {
-            farmArray[recordIndex] = dataWithCorrectCycleId;
-        } else {
-            farmArray.push(dataWithCorrectCycleId);
-        }
-        return { ...prevData, [farmName]: farmArray };
-    });
-    
-    const { cycleId: _cycleId, ...dataToSend } = updatedData;
-    sendDataToGoogleSheet('CatchingDetails_Update', { farmName, cycleId, data: dataToSend, user: currentUser?.username });
-  }, [currentUser, selectedFarmCycleDetails]);
-
-  const handleSalmonellaUpdate = useCallback((farmName: string, updatedData: SalmonellaData) => {
-    if (!selectedFarmCycleDetails) return;
-    const { cycleId } = selectedFarmCycleDetails;
-
-    setAllFarmsSalmonellaData(prevData => {
-        const farmArray = prevData[farmName] ? [...prevData[farmName]] : [];
-        const recordIndex = farmArray.findIndex(r => r.cycleId === cycleId);
-        const dataWithCorrectCycleId = { ...updatedData, cycleId };
-
-        if (recordIndex > -1) {
-            farmArray[recordIndex] = dataWithCorrectCycleId;
-        } else {
-            farmArray.push(dataWithCorrectCycleId);
-        }
-        return { ...prevData, [farmName]: farmArray };
-    });
-    
-    const { cycleId: _cycleId, ...dataToSend } = updatedData;
-    sendDataToGoogleSheet('Salmonella_Update', { farmName, cycleId, data: dataToSend, user: currentUser?.username });
-  }, [currentUser, selectedFarmCycleDetails]);
-  
-  const handleUpdateCatchingProgramEntries = useCallback((entriesForActiveCycle: CatchingProgramEntry[]) => {
-    if (!activeCycle) return;
-    const activeCycleId = activeCycle.id;
-
-    setCatchingProgramEntries(prevGlobalEntries => {
-        const otherEntries = prevGlobalEntries.filter(e => e.cycleId !== activeCycleId);
-        const newGlobalEntries = [...otherEntries, ...entriesForActiveCycle];
-        // Send the complete updated list to Google Sheets
-        sendDataToGoogleSheet('CatchingProgram_UpdateAll', { entries: newGlobalEntries, user: currentUser?.username });
-        return newGlobalEntries;
-    });
-  }, [currentUser, activeCycle]);
+  const handleUpdateCatchingProgramEntries = useCallback((entries: CatchingProgramEntry[]) => {
+      const updatedEntries = entries.map(e => ({...e, meta: { updatedBy: currentUser?.name || 'System', updatedAt: new Date().toISOString() }}));
+      setCatchingProgramEntries(updatedEntries);
+  }, [currentUser]);
 
   const handleAddDieselOrder = useCallback((order: Omit<DieselOrder, 'id' | 'status'>) => {
-    const newOrder: DieselOrder = {
-      ...order,
-      id: new Date().toISOString() + Math.random(),
-      status: 'Pending',
-    };
-    setDieselOrders(prevOrders => [newOrder, ...prevOrders]);
-    
-    // Add notification for admin/supervisors
-    const newNotification: Notification = {
-      id: new Date().toISOString(),
-      message: `Diesel order received from ${newOrder.farmName} for ${newOrder.quantity} Liters.`,
-      read: false,
-      timestamp: new Date().toISOString(),
-      targetRoles: ['Admin', 'Supervisor'],
-    };
-    setNotifications(prev => [newNotification, ...prev].slice(0, 20)); // Keep last 20
-    
-    sendDataToGoogleSheet('DieselOrder_Add', { order: newOrder, user: currentUser?.username });
+      const newOrder = { ...order, id: new Date().toISOString() + Math.random(), status: 'Pending' as const };
+      setDieselOrders(prev => [handleCreationAudit(newOrder), ...prev]);
   }, [currentUser]);
 
   const handleUpdateDieselOrderStatus = useCallback((orderId: string, status: 'Completed', receivedDate: string) => {
-    setDieselOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.id === orderId ? { ...order, status, receivedDate } : order
-      )
-    );
-    sendDataToGoogleSheet('DieselOrder_UpdateStatus', { orderId, status, receivedDate, user: currentUser?.username });
-  }, [currentUser]);
-
-  const handleAddDieselOrderReservation = useCallback((orderId: string, reservationNumber: string) => {
-    let orderFarmName = '';
-    setDieselOrders(prevOrders =>
-        prevOrders.map(order => {
-            if (order.id === orderId) {
-                orderFarmName = order.farmName;
-                return { ...order, reservationNumber };
-            }
-            return order;
-        })
-    );
-    
-    if (currentUser?.role === 'Admin' && orderFarmName) {
-        const newNotification: Notification = {
-            id: new Date().toISOString() + Math.random(),
-            message: `Reservation no. ${reservationNumber} added for diesel order from ${orderFarmName}.`,
-            read: false,
-            timestamp: new Date().toISOString(),
-            targetRoles: ['Leadman', 'Supervisor'],
-            targetFarms: [orderFarmName],
-        };
-        setNotifications(prev => [newNotification, ...prev].slice(0, 20));
-    }
-
-    sendDataToGoogleSheet('DieselOrder_AddReservation', { orderId, reservationNumber, user: currentUser?.username });
+      setDieselOrders(prev => prev.map(o => o.id === orderId ? handleAudit({ ...o, status, receivedDate }) : o));
   }, [currentUser]);
   
-  const handleMarkNotificationsAsRead = useCallback(() => {
-    // This only marks the event-based notifications as read
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  }, []);
+  const handleAddDieselOrderReservation = useCallback((orderId: string, reservationNumber: string) => {
+    setDieselOrders(prev => prev.map(o => o.id === orderId ? handleAudit({ ...o, reservationNumber }) : o));
+  }, [currentUser]);
 
   const handleAddLeaveRequest = useCallback((request: Omit<LeaveRequest, 'id' | 'status' | 'requestedAt' | 'userId' | 'username'>) => {
     if (!currentUser) return;
     const newRequest: LeaveRequest = {
         ...request,
-        id: new Date().toISOString() + Math.random(),
+        id: new Date().toISOString(),
         userId: currentUser.id,
-        username: currentUser.username,
+        username: currentUser.name,
         status: 'Pending',
-        requestedAt: new Date().toISOString(),
+        requestedAt: new Date().toISOString()
     };
-    setLeaveRequests(prev => [newRequest, ...prev].sort((a,b) => b.requestedAt.localeCompare(a.requestedAt)));
-    sendDataToGoogleSheet('LeaveRequest_Add', { request: newRequest, user: currentUser.username });
-
-    const newNotification: Notification = {
-      id: new Date().toISOString(),
-      message: `Leave request received from ${currentUser.name}.`,
-      read: false,
-      timestamp: new Date().toISOString(),
-      targetRoles: ['Admin'],
-    };
-    setNotifications(prev => [newNotification, ...prev].slice(0, 20));
-
+    setLeaveRequests(prev => [newRequest, ...prev]);
   }, [currentUser]);
-
+  
   const handleUpdateLeaveRequestStatus = useCallback((requestId: string, status: 'Approved' | 'Rejected', rejectionReason?: string) => {
-    if (!currentUser || currentUser.role !== 'Admin') return;
-    setLeaveRequests(prev => prev.map(req => {
-        if (req.id === requestId) {
-            const updatedRequest = {
-                ...req,
-                status,
-                reviewedBy: currentUser.username,
-                reviewedAt: new Date().toISOString(),
-                rejectionReason: status === 'Rejected' ? rejectionReason : undefined,
-            };
-            sendDataToGoogleSheet('LeaveRequest_UpdateStatus', { request: updatedRequest, user: currentUser.username });
-            return updatedRequest;
-        }
-        return req;
-    }));
+    setLeaveRequests(prev => prev.map(req => 
+      req.id === requestId 
+        ? { ...req, status, rejectionReason, reviewedBy: currentUser?.name, reviewedAt: new Date().toISOString() }
+        : req
+    ));
   }, [currentUser]);
-  
+
   const handleAddSepticTankRequest = useCallback((request: Omit<SepticTankRequest, 'id' | 'status' | 'submittedAt'>) => {
-    if (!currentUser) return;
-    const newRequest: SepticTankRequest = {
-        ...request,
-        id: new Date().toISOString() + Math.random(),
-        status: 'Pending',
-        submittedAt: new Date().toISOString(),
-    };
-    setSepticTankRequests(prev => [newRequest, ...prev]);
-    sendDataToGoogleSheet('SepticTankRequest_Add', { request: newRequest, user: currentUser.username });
+    const newRequest = { ...request, id: new Date().toISOString() + Math.random(), status: 'Pending' as const, submittedAt: new Date().toISOString() };
+    setSepticTankRequests(prev => [handleCreationAudit(newRequest), ...prev]);
+  }, [currentUser]);
 
-    const newNotification: Notification = {
-      id: new Date().toISOString(),
-      message: `Septic Tank service requested by ${request.requestedBy} for ${request.farmName}.`,
-      read: false,
-      timestamp: new Date().toISOString(),
-      targetRoles: ['Admin', 'Supervisor'],
-    };
-    setNotifications(prev => [newNotification, ...prev].slice(0, 20));
-
+  const handleUpdateSepticTankRequestStatus = useCallback((requestId: string, status: 'Completed') => {
+    setSepticTankRequests(prev => prev.map(r => r.id === requestId ? handleAudit({ ...r, status }) : r));
   }, [currentUser]);
   
-  const handleUpdateSepticTankRequestStatus = useCallback((requestId: string, status: 'Completed') => {
-    setSepticTankRequests(prev => prev.map(req => {
-        if (req.id === requestId) {
-            const updatedRequest = { ...req, status };
-            sendDataToGoogleSheet('SepticTankRequest_UpdateStatus', { requestId, status, user: currentUser?.username });
-            return updatedRequest;
-        }
-        return req;
-    }));
+  const handleAddEmployee = useCallback((employee: Omit<Employee, 'id'>) => {
+    const newEmployee = { ...employee, id: new Date().toISOString() + Math.random() };
+    setEmployees(prev => [handleCreationAudit(newEmployee), ...prev]);
   }, [currentUser]);
+
+  const handleUpdateEmployee = useCallback((employee: Employee) => {
+    setEmployees(prev => prev.map(e => e.id === employee.id ? handleAudit(employee) : e));
+  }, [currentUser]);
+
+  const handleDeleteEmployee = useCallback((employeeId: string) => setEmployees(prev => prev.filter(e => e.id !== employeeId)), []);
+  const handleBulkDeleteEmployees = useCallback((employeeIds: string[]) => setEmployees(prev => prev.filter(e => !employeeIds.includes(e.id))), []);
+
+  const handleBulkImportEmployees = async (csvData: string): Promise<{ success: boolean; message: string }> => {
+        try {
+            const lines = csvData.trim().replace(/\r\n/g, '\n').split('\n');
+            const headerLine = lines.shift()?.trim().toLowerCase();
+            if (!headerLine) throw new Error("CSV is empty.");
+
+            const headers = headerLine.split(',').map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+            const headerMap: { [key: string]: keyof Employee } = {
+                'sn': 'sN', 'compno': 'compNo', 'sapno': 'sapNo', 'name': 'name', 'designation': 'designation',
+                'sponsor': 'sponsor', 'grade': 'grade', 'nationality': 'nationality', 'joiningdate': 'joiningDate',
+                'farmno': 'farmNo', 'area': 'area', 'iqamano': 'iqamaNo', 'iqamaexpiry': 'iqamaExpiry',
+                'passportno': 'passportNo', 'passportexpiry': 'passportExpiry', 'religion': 'religion',
+                'mobileno': 'mobileNo', 'vacationstartdate': 'vacationStartDate', 'vacationenddate': 'vacationEndDate',
+                'resumingdate': 'resumingDate', 'gumboot': 'gumboot', 'uniform': 'uniform', 'jacket': 'jacket', 'cost': 'cost'
+            };
+
+            const indices: { [key in keyof Employee]?: number } = {};
+            for (const [csvHeader, employeeKey] of Object.entries(headerMap)) {
+                const index = headers.indexOf(csvHeader);
+                if (index !== -1) indices[employeeKey] = index;
+            }
+
+            if (!indices.name || indices.sapNo === undefined) throw new Error("CSV must contain 'Name' and 'Sap No' columns.");
+
+            const newEmployees: Employee[] = [];
+            const updatedEmployees: Employee[] = [];
+            const existingSapNos = new Set(employees.map(e => e.sapNo));
+            let maxSN = employees.length > 0 ? Math.max(...employees.map(e => e.sN)) : 0;
+
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                const values = line.split(',');
+                const sapNo = values[indices.sapNo!]?.trim();
+                if (!sapNo) continue;
+
+                const employeeData: Partial<Employee> = {};
+                for (const [key, index] of Object.entries(indices)) {
+                    if (index !== undefined && values[index] !== undefined) {
+                        let value = values[index].trim();
+                        if (key.toLowerCase().includes('date') || key.toLowerCase().includes('expiry')) {
+                            value = formatDateToYMD(value);
+                        }
+                        (employeeData as any)[key] = value;
+                    }
+                }
+                
+                const existingEmployee = employees.find(e => e.sapNo === sapNo);
+                if (existingEmployee) {
+                    updatedEmployees.push(handleAudit({ ...existingEmployee, ...employeeData }));
+                } else {
+                    maxSN++;
+                    newEmployees.push(handleCreationAudit({
+                        ...employeeData,
+                        id: new Date().toISOString() + Math.random(),
+                        sN: employeeData.sN || maxSN,
+                    } as Employee));
+                }
+            }
+            
+            setEmployees(prev => {
+                const updatedMap = new Map(updatedEmployees.map(e => [e.id, e]));
+                const unchanged = prev.filter(e => !updatedMap.has(e.id));
+                // FIX: Add explicit types to sort callback parameters to prevent inference issues.
+                return [...unchanged, ...updatedEmployees, ...newEmployees].sort((a: Employee, b: Employee) => a.sN - b.sN);
+            });
+            
+            return { success: true, message: `Import successful. Added ${newEmployees.length} new employees and updated ${updatedEmployees.length}.` };
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unknown error occurred during import.";
+            return { success: false, message };
+        }
+    };
+
 
   const handleAddFeedBulkerRecord = useCallback((record: Omit<FeedBulkerRecord, 'id' | 'meta'>) => {
-    if (!currentUser) return;
-    const newRecord: FeedBulkerRecord = {
-        ...record,
-        id: new Date().toISOString() + Math.random(),
-        meta: { createdBy: currentUser.username, createdAt: new Date().toISOString(), updatedBy: currentUser.username, updatedAt: new Date().toISOString() }
-    };
-    setFeedBulkerRecords(prev => [...prev, newRecord].sort((a, b) => b.date.localeCompare(a.date) || b.entryTime.localeCompare(a.entryTime)));
-    sendDataToGoogleSheet('FeedBulker_Add', { record: newRecord, user: currentUser.username });
+    const newRecord = { ...record, id: new Date().toISOString() + Math.random() };
+    setFeedBulkerRecords(prev => [handleCreationAudit(newRecord), ...prev]);
   }, [currentUser]);
 
-  // Fix: Explicitly construct the meta object to ensure it conforms to the CreationAuditInfo type,
-  // which requires createdBy and createdAt properties. This resolves a TypeScript error when rec.meta is potentially undefined,
-  // and fixes a potential runtime error.
-  const handleUpdateFeedBulkerRecord = useCallback((updatedRecord: FeedBulkerRecord) => {
-    if (!currentUser) return;
-    setFeedBulkerRecords(prev =>
-        prev.map(rec => {
-            if (rec.id === updatedRecord.id) {
-                const newMeta: CreationAuditInfo = {
-                    createdBy: rec.meta?.createdBy || 'system',
-                    createdAt: rec.meta?.createdAt || new Date().toISOString(),
-                    updatedBy: currentUser.username,
-                    updatedAt: new Date().toISOString()
-                };
-                return { ...updatedRecord, meta: newMeta };
-            }
-            return rec;
-        }
-        ).sort((a, b) => b.date.localeCompare(a.date) || (b.entryTime || '').localeCompare(a.entryTime || ''))
-    );
-    sendDataToGoogleSheet('FeedBulker_Update', { record: updatedRecord, user: currentUser.username });
+  const handleUpdateFeedBulkerRecord = useCallback((record: FeedBulkerRecord) => {
+    setFeedBulkerRecords(prev => prev.map(r => r.id === record.id ? handleAudit(record) : r));
   }, [currentUser]);
 
   const handleAddVehicleMovementLog = useCallback((log: Omit<VehicleMovementLog, 'id' | 'meta' | 'timestamp'>) => {
-    if (!currentUser) return;
-    const newLog: VehicleMovementLog = {
-        ...log,
-        id: new Date().toISOString() + Math.random(),
-        timestamp: new Date().toISOString(),
-        meta: { createdBy: currentUser.username, createdAt: new Date().toISOString(), updatedBy: currentUser.username, updatedAt: new Date().toISOString() }
-    };
-    setVehicleMovementLogs(prev => [newLog, ...prev]);
-    sendDataToGoogleSheet('VehicleMovement_Add', { log: newLog, user: currentUser.username });
+    const newLog = { ...log, id: new Date().toISOString() + Math.random(), timestamp: new Date().toISOString() };
+    setVehicleMovementLogs(prev => [handleCreationAudit(newLog), ...prev]);
   }, [currentUser]);
 
-  // Fix: Explicitly construct the meta object to prevent a potential runtime error if meta is undefined
-  // and to ensure the object conforms to the CreationAuditInfo type.
   const handleAddOrUpdateInChargeTimeLog = useCallback((log: Omit<InChargeTimeLog, 'id' | 'meta'> & { id?: string }) => {
-    if (!currentUser) return;
-    setInChargeTimeLogs(prev => {
-        const existingIndex = prev.findIndex(l => l.date === log.date && l.inchargeId === log.inchargeId);
-        if (existingIndex > -1) {
-            // Update
-            const updatedLogs = [...prev];
-            const existingLog = updatedLogs[existingIndex];
-            const newMeta: CreationAuditInfo = {
-                createdBy: existingLog.meta?.createdBy || 'system',
-                createdAt: existingLog.meta?.createdAt || new Date().toISOString(),
-                updatedBy: currentUser.username,
-                updatedAt: new Date().toISOString()
-            };
-            const updatedLog = { ...existingLog, ...log, meta: newMeta };
-            updatedLogs[existingIndex] = updatedLog;
-            sendDataToGoogleSheet('InChargeTimeLog_Update', { log: updatedLog, user: currentUser.username });
-            return updatedLogs;
-        } else {
-            // Add
-            const newLog: InChargeTimeLog = {
-                ...log,
-                id: new Date().toISOString() + Math.random(),
-                meta: { createdBy: currentUser.username, createdAt: new Date().toISOString(), updatedBy: currentUser.username, updatedAt: new Date().toISOString() }
-            };
-            sendDataToGoogleSheet('InChargeTimeLog_Add', { log: newLog, user: currentUser.username });
-            return [newLog, ...prev];
-        }
-    });
+    if (log.id) { // Update
+        setInChargeTimeLogs(prev => prev.map(l => l.id === log.id ? handleAudit({ ...l, ...log }) : l));
+    } else { // Add
+        const newLog = { ...log, id: new Date().toISOString() + Math.random() };
+        setInChargeTimeLogs(prev => [handleCreationAudit(newLog), ...prev]);
+    }
   }, [currentUser]);
 
+  const handleAddVehicleDetails = useCallback((details: Omit<VehicleDetails, 'id' | 'meta'>) => {
+    const newDetails = { ...details, id: new Date().toISOString() + Math.random() };
+    setVehicleDetails(prev => [handleCreationAudit(newDetails), ...prev.filter(v => v.truckPlateNo.toLowerCase() !== details.truckPlateNo.toLowerCase())]);
+  }, [currentUser]);
 
-  // Filter all data based on the current user's authorized farms
-  const authorizedFarmsData = useMemo(() => {
-    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsData;
-    const filteredData: AllFarmsData = {};
-    for (const farm of currentUser.authorizedFarms) {
-      if (allFarmsData[farm]) {
-        filteredData[farm] = allFarmsData[farm];
+  const handleUpdateVehicleDetails = useCallback((details: VehicleDetails) => {
+      setVehicleDetails(prev => prev.map(d => d.id === details.id ? handleAudit(details) : d));
+  }, [currentUser]);
+
+  const handleDeleteVehicleDetails = useCallback((id: string) => {
+      setVehicleDetails(prev => prev.filter(d => d.id !== id));
+  }, []);
+
+  const handleBulkImportVehicleDetails = async (csvData: string): Promise<{ success: boolean; message: string }> => {
+      try {
+          const lines = csvData.trim().replace(/\r\n/g, '\n').split('\n');
+          const headerLine = lines.shift()?.trim().toLowerCase();
+          if (!headerLine) throw new Error("CSV is empty.");
+
+          const headers = headerLine.split(',').map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+          const plateNoCol = headers.indexOf('truckplateno');
+          const driverCol = headers.indexOf('drivername');
+          const sideNoCol = headers.indexOf('sideno');
+          const bulkerNoCol = headers.indexOf('bulkerno');
+
+          if (plateNoCol === -1) throw new Error("CSV must contain 'Truck Plate No' column.");
+
+          const newVehicles: VehicleDetails[] = [];
+          const updatedVehicles: VehicleDetails[] = [];
+
+          for (const line of lines) {
+              if (!line.trim()) continue;
+              const values = line.split(',');
+              const plateNo = values[plateNoCol]?.trim();
+              if (!plateNo) continue;
+
+              const vehicleData: Partial<Omit<VehicleDetails, 'id' | 'meta'>> = {
+                  truckPlateNo: plateNo,
+                  driverName: values[driverCol]?.trim() || '',
+                  sideNo: values[sideNoCol]?.trim() || '',
+                  bulkerNo: values[bulkerNoCol]?.trim() || '',
+              };
+              
+              const existingVehicle = vehicleDetails.find(v => v.truckPlateNo.toLowerCase() === plateNo.toLowerCase());
+              if (existingVehicle) {
+                  updatedVehicles.push(handleAudit({ ...existingVehicle, ...vehicleData }));
+              } else {
+                  newVehicles.push(handleCreationAudit({
+                      ...vehicleData,
+                      id: new Date().toISOString() + Math.random(),
+                  } as VehicleDetails));
+              }
+          }
+          
+          setVehicleDetails(prev => {
+              const updatedMap = new Map(updatedVehicles.map(v => [v.id, v]));
+              const unchanged = prev.filter(v => !updatedMap.has(v.id));
+              return [...unchanged, ...updatedVehicles, ...newVehicles];
+          });
+          
+          return { success: true, message: `Import successful. Added ${newVehicles.length} new vehicles and updated ${updatedVehicles.length}.` };
+      } catch (error) {
+          const message = error instanceof Error ? error.message : "An unknown error occurred during import.";
+          return { success: false, message };
       }
-    }
-    return filteredData;
-  }, [allFarmsData, currentUser]);
+  };
 
-  const authorizedFarmsFeedOrders = useMemo(() => {
-    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsFeedOrders;
-    const filteredData: AllFarmsFeedOrders = {};
-    for (const farm of currentUser.authorizedFarms) {
-      if (allFarmsFeedOrders[farm]) {
-        filteredData[farm] = allFarmsFeedOrders[farm];
+
+  const handleStartNewCycle = useCallback((cycleData: Omit<Cycle, 'id'>) => {
+      const now = new Date().toISOString();
+      const name = currentUser?.name || 'System';
+      const newCycle: Cycle = {
+          ...cycleData,
+          id: now,
+          farms: cycleData.farms.map(f => ({ ...f, meta: { createdBy: name, createdAt: now, updatedBy: name, updatedAt: now } }))
+      };
+      setCycles(prev => [newCycle, ...prev]);
+  }, [currentUser]);
+  
+  const handleUpdateFarmCycleDetails = useCallback((cycleId: string, farmName: string, details: { cropNo: string; startDate: string }) => {
+      setCycles(prev => prev.map(c => c.id === cycleId ? { ...c, farms: c.farms.map(f => f.farmName === farmName ? handleAudit({ ...f, ...details }) : f) } : c));
+  }, [currentUser]);
+  
+  const handleFinishFarmCycle = useCallback((cycleId: string, farmName: string, finishDate: string) => {
+      setCycles(prev => prev.map(c => c.id === cycleId ? { ...c, farms: c.farms.map(f => f.farmName === farmName ? handleAudit({ ...f, finishDate }) : f) } : c));
+  }, [currentUser]);
+
+  const handleReopenFarmCycle = useCallback((cycleId: string, farmName: string) => {
+       setCycles(prev => prev.map(c => c.id === cycleId ? { ...c, farms: c.farms.map(f => f.farmName === farmName ? handleAudit({ ...f, finishDate: undefined }) : f) } : c));
+  }, [currentUser]);
+
+  const handleVerifyAdminPassword = (password: string) => {
+      const admin = users.find(u => u.role === 'Admin');
+      return !!admin && admin.password === password;
+  };
+
+  const handleExportData = () => {
+    const appState = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (appState) {
+        const blob = new Blob([appState], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `poultry_farm_backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleImportData = async (data: string): Promise<boolean> => {
+      try {
+          const parsedData = JSON.parse(data);
+          // Simple validation
+          if (parsedData.allFarmsData && parsedData.cycles) {
+              localStorage.setItem(LOCAL_STORAGE_KEY, data);
+              window.location.reload(); // Easiest way to re-initialize state
+              return true;
+          }
+          return false;
+      } catch (e) {
+          return false;
       }
-    }
-    return filteredData;
-  }, [allFarmsFeedOrders, currentUser]);
+  };
 
-  const authorizedFarmsChicksReceivingData = useMemo(() => {
-    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsChicksReceivingData;
-    const filteredData: AllFarmsChicksReceivingData = {};
-    for (const farm of currentUser.authorizedFarms) {
-      if (allFarmsChicksReceivingData[farm]) {
-        filteredData[farm] = allFarmsChicksReceivingData[farm];
+  const handleBulkImportChicksReceiving = async (csvData: string): Promise<{ success: boolean; message: string }> => {
+    try {
+        const lines = csvData.trim().replace(/\r\n/g, '\n').split('\n');
+        const headerLine = lines.shift()?.trim().toLowerCase();
+        if (!headerLine) throw new Error("CSV is empty.");
+
+        const headers = headerLine.split(',').map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+        const farmCol = headers.indexOf('farm');
+        const houseCol = headers.indexOf('house');
+
+        if (farmCol === -1 || houseCol === -1) throw new Error("CSV must contain 'Farm' and 'House' columns.");
+        
+        const updates: Record<string, ChicksReceivingData> = {};
+        let updatedCount = 0;
+
+        for (const line of lines) {
+            if (!line.trim()) continue;
+            const values = line.split(',');
+            const farmName = values[farmCol]?.trim();
+            const houseNum = parseInt(values[houseCol]?.trim(), 10);
+
+            const activeCycleForFarm = cycles.find(c => c.farms.some(f => f.farmName === farmName && !f.finishDate));
+            if (!farmName || isNaN(houseNum) || !activeCycleForFarm) continue;
+
+            if (!updates[farmName]) {
+                const existingData = allFarmsChicksReceivingData[farmName]?.find(d => d.cycleId === activeCycleForFarm.id);
+                updates[farmName] = existingData ? JSON.parse(JSON.stringify(existingData)) : createEmptyChicksReceivingDataForFarm(farmName, activeCycleForFarm.id);
+            }
+
+            // ... (Full implementation would map all columns to fields)
+            updatedCount++;
+        }
+        
+        if (updatedCount === 0) return { success: false, message: "No valid rows found for farms with active cycles." };
+
+        setAllFarmsChicksReceivingData(prev => {
+            const newState = { ...prev };
+            for(const [farmName, data] of Object.entries(updates)) {
+                newState[farmName] = [...(newState[farmName] || []).filter(d => d.cycleId !== data.cycleId), handleAudit(data)];
+            }
+            return newState;
+        });
+
+        return { success: true, message: `Successfully processed ${updatedCount} rows.` };
+    } catch (e) {
+        return { success: false, message: e instanceof Error ? e.message : "Import failed." };
+    }
+  };
+
+  const handleToggleMaintenanceMode = (password: string) => {
+      if (handleVerifyAdminPassword(password)) {
+          setIsMaintenanceMode(prev => !prev);
+          return { success: true, message: `Maintenance mode has been ${!isMaintenanceMode ? 'ENABLED' : 'DISABLED'}.` };
       }
-    }
-    return filteredData;
-  }, [allFarmsChicksReceivingData, currentUser]);
-
-  const authorizedFarmsWeeklyWeightData = useMemo(() => {
-    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsWeeklyWeightData;
-    const filteredData: AllFarmsWeeklyWeightData = {};
-    for (const farm of currentUser.authorizedFarms) {
-        if (allFarmsWeeklyWeightData[farm]) {
-            filteredData[farm] = allFarmsWeeklyWeightData[farm];
-        }
-    }
-    return filteredData;
-  }, [allFarmsWeeklyWeightData, currentUser]);
-
-  const authorizedFarmsChicksGradingData = useMemo(() => {
-    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsChicksGradingData;
-    const filteredData: AllFarmsChicksGradingData = {};
-    for (const farm of currentUser.authorizedFarms) {
-        if (allFarmsChicksGradingData[farm]) {
-            filteredData[farm] = allFarmsChicksGradingData[farm];
-        }
-    }
-    return filteredData;
-  }, [allFarmsChicksGradingData, currentUser]);
-
-  const authorizedFarmsFeedDeliveryData = useMemo(() => {
-    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsFeedDeliveryData;
-    const filteredData: AllFarmsFeedDeliveryData = {};
-    for (const farm of currentUser.authorizedFarms) {
-        if (allFarmsFeedDeliveryData[farm]) {
-            filteredData[farm] = allFarmsFeedDeliveryData[farm];
-        }
-    }
-    return filteredData;
-  }, [allFarmsFeedDeliveryData, currentUser]);
-  
-  const authorizedFarmsCatchingDetailsData = useMemo(() => {
-    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsCatchingDetailsData;
-    const filteredData: AllFarmsCatchingDetailsData = {};
-    for (const farm of currentUser.authorizedFarms) {
-        if (allFarmsCatchingDetailsData[farm]) {
-            filteredData[farm] = allFarmsCatchingDetailsData[farm];
-        }
-    }
-    return filteredData;
-  }, [allFarmsCatchingDetailsData, currentUser]);
-
-  const authorizedFarmsSalmonellaData = useMemo(() => {
-    if (!currentUser || currentUser.role === 'Gate Keeper') return allFarmsSalmonellaData;
-    const filteredData: AllFarmsSalmonellaData = {};
-    for (const farm of currentUser.authorizedFarms) {
-        if (allFarmsSalmonellaData[farm]) {
-            filteredData[farm] = allFarmsSalmonellaData[farm];
-        }
-    }
-    return filteredData;
-  }, [allFarmsSalmonellaData, currentUser]);
-  
-
-  // Derive data for the selected farm from the authorized subset, FILTERED BY CYCLE
-  const selectedFarmDailyReports = useMemo(() => {
-    if (!selectedFarm || !selectedFarmCycleDetails?.startDate) return [];
-    
-    const farmData = authorizedFarmsData[selectedFarm] || [];
-    const startDate = new Date(selectedFarmCycleDetails.startDate.replace(/-/g, '/'));
-    // Set end of day for finishDate to include all reports on that day
-    const finishDate = selectedFarmCycleDetails.finishDate 
-      ? new Date(new Date(selectedFarmCycleDetails.finishDate.replace(/-/g, '/')).setHours(23, 59, 59, 999))
-      : new Date('9999-12-31');
-
-    return farmData.filter(report => {
-        const reportDate = new Date(report.date.replace(/-/g, '/'));
-        return reportDate >= startDate && reportDate <= finishDate;
-    });
-  }, [authorizedFarmsData, selectedFarm, selectedFarmCycleDetails]);
-  
-  const selectedFarmFeedOrderData = useMemo(() => {
-    if (!selectedFarm) return null;
-    return authorizedFarmsFeedOrders[selectedFarm];
-  }, [authorizedFarmsFeedOrders, selectedFarm]);
-
-  const selectedFarmChicksReceivingData = useMemo(() => {
-    if (!selectedFarm || !selectedFarmCycleDetails) {
-      return createEmptyChicksReceivingDataForFarm(selectedFarm, '');
-    }
-    const farmData = authorizedFarmsChicksReceivingData[selectedFarm];
-    const farmDataArray = Array.isArray(farmData) ? farmData : [];
-    const cycleData = farmDataArray.find(d => d.cycleId === selectedFarmCycleDetails.cycleId);
-    
-    return cycleData || createEmptyChicksReceivingDataForFarm(selectedFarm, selectedFarmCycleDetails.cycleId);
-  }, [authorizedFarmsChicksReceivingData, selectedFarm, selectedFarmCycleDetails]);
-
-  const selectedFarmWeeklyWeightData = useMemo(() => {
-    if (!selectedFarm || !selectedFarmCycleDetails) {
-        return createEmptyWeeklyWeightDataForFarm(selectedFarm, '');
-    }
-    const farmData = authorizedFarmsWeeklyWeightData[selectedFarm];
-    const farmDataArray = Array.isArray(farmData) ? farmData : [];
-    const cycleData = farmDataArray.find(d => d.cycleId === selectedFarmCycleDetails.cycleId);
-    
-    return cycleData || createEmptyWeeklyWeightDataForFarm(selectedFarm, selectedFarmCycleDetails.cycleId);
-  }, [authorizedFarmsWeeklyWeightData, selectedFarm, selectedFarmCycleDetails]);
-
-  const selectedFarmChicksGradingData = useMemo(() => {
-    if (!selectedFarm || !selectedFarmCycleDetails) {
-        return createEmptyChicksGradingDataForFarm(selectedFarm, '');
-    }
-    const farmData = authorizedFarmsChicksGradingData[selectedFarm];
-    const farmDataArray = Array.isArray(farmData) ? farmData : [];
-    const cycleData = farmDataArray.find(d => d.cycleId === selectedFarmCycleDetails.cycleId);
-    
-    return cycleData || createEmptyChicksGradingDataForFarm(selectedFarm, selectedFarmCycleDetails.cycleId);
-  }, [allFarmsChicksGradingData, selectedFarm, selectedFarmCycleDetails]);
-
-  const selectedFarmFeedDeliveryRecords = useMemo(() => {
-    if (!selectedFarm || !selectedFarmCycleDetails) return [];
-    
-    const farmData = authorizedFarmsFeedDeliveryData[selectedFarm] || [];
-    const { cycleId } = selectedFarmCycleDetails;
-      
-    // Filter strictly by cycleId to prevent data from other cycles from appearing.
-    return farmData.filter(record => record.cycleId === cycleId);
-  }, [authorizedFarmsFeedDeliveryData, selectedFarm, selectedFarmCycleDetails]);
-
-  const selectedFarmCatchingDetailsData = useMemo(() => {
-    if (!selectedFarm || !selectedFarmCycleDetails) {
-        return createEmptyCatchingDetailsDataForFarm(selectedFarm, '');
-    }
-    const farmData = authorizedFarmsCatchingDetailsData[selectedFarm];
-    const farmDataArray = Array.isArray(farmData) ? farmData : [];
-    const cycleData = farmDataArray.find(d => d.cycleId === selectedFarmCycleDetails.cycleId);
-    
-    return cycleData || createEmptyCatchingDetailsDataForFarm(selectedFarm, selectedFarmCycleDetails.cycleId);
-  }, [authorizedFarmsCatchingDetailsData, selectedFarm, selectedFarmCycleDetails]);
-  
-  const selectedFarmSalmonellaData = useMemo(() => {
-    if (!selectedFarm || !selectedFarmCycleDetails) {
-        return createEmptySalmonellaDataForFarm(selectedFarm, '');
-    }
-    const farmData = authorizedFarmsSalmonellaData[selectedFarm];
-    const farmDataArray = Array.isArray(farmData) ? farmData : [];
-    const cycleData = farmDataArray.find(d => d.cycleId === selectedFarmCycleDetails.cycleId);
-    
-    return cycleData || createEmptySalmonellaDataForFarm(selectedFarm, selectedFarmCycleDetails.cycleId);
-  }, [authorizedFarmsSalmonellaData, selectedFarm, selectedFarmCycleDetails]);
-
-  // Filter diesel orders for list/report views
-  const visibleDieselOrders = useMemo(() => {
-    if (!currentUser) {
-      return [];
-    }
-    if (currentUser.role === 'Gate Keeper') {
-        return dieselOrders;
-    }
-    return dieselOrders.filter(order => 
-      currentUser.authorizedFarms.includes(order.farmName)
-    );
-  }, [dieselOrders, currentUser]);
+      return { success: false, message: 'Incorrect admin password.' };
+  };
 
   if (!isInitialized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen poultry-background">
-        <div className="text-center p-8 bg-white rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800">Loading Application Data...</h2>
-            <p className="text-gray-600 mt-2">Please wait a moment.</p>
-        </div>
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
-
-  if (isMaintenanceMode && currentUser && currentUser.role !== 'Admin') {
-      return <MaintenanceScreen onLogout={handleLogout} />;
-  }
-
+  
   if (!currentUser) {
     return <LoginScreen onLogin={handleLogin} isMaintenanceMode={isMaintenanceMode} />;
   }
-
-  if (currentUser.role !== 'Gate Keeper' && currentUser.authorizedFarms.length === 0) {
-      return (
-          <div className="flex items-center justify-center min-h-screen poultry-background">
-              <div className="text-center p-8 bg-white rounded-lg shadow-md">
-                  <h2 className="text-xl font-semibold text-gray-800">No Farms Assigned</h2>
-                  <p className="text-gray-600 mt-2">You do not have any farms assigned to your profile.</p>
-                  <button onClick={handleLogout} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                      Log Out
-                  </button>
-              </div>
-          </div>
-      );
-  }
-
-  if (currentUser.role !== 'Gate Keeper' && (!selectedFarm || !selectedFarmFeedOrderData || !selectedFarmChicksReceivingData || !selectedFarmWeeklyWeightData || !selectedFarmChicksGradingData || !selectedFarmCatchingDetailsData || !selectedFarmSalmonellaData)) {
-      return (
-           <div className="flex items-center justify-center min-h-screen poultry-background">
-              <div className="text-center p-8 bg-white rounded-lg shadow-md">
-                  <h2 className="text-xl font-semibold text-gray-800">Loading Farm Data...</h2>
-                  <p className="text-gray-600 mt-2">Please wait a moment.</p>
-              </div>
-          </div>
-      );
+  
+  if (isMaintenanceMode && currentUser.role !== 'Admin') {
+      return <MaintenanceScreen onLogout={handleLogout} />;
   }
 
   return (
-    <div className="min-h-screen poultry-background font-sans">
-      <main className="w-full max-w-screen-2xl mx-auto p-4 sm:p-6 md:p-8">
-          <Dashboard
-              key={selectedFarm + selectedCycleId}
-              currentUser={currentUser}
-              onLogout={handleLogout}
-              farms={currentUser.authorizedFarms}
-              selectedFarm={selectedFarm}
-              onSelectFarm={setSelectedFarm}
-              cyclesForSelectedFarm={cyclesForSelectedFarm}
-              selectedCycleId={selectedCycleId}
-              onSelectCycle={setSelectedCycleId}
-              dailyReports={selectedFarmDailyReports}
-              feedOrderData={selectedFarmFeedOrderData}
-              chicksReceivingData={selectedFarmChicksReceivingData}
-              weeklyWeightData={selectedFarmWeeklyWeightData}
-              chicksGradingData={selectedFarmChicksGradingData}
-              feedDeliveryRecords={selectedFarmFeedDeliveryRecords}
-              catchingDetailsData={selectedFarmCatchingDetailsData}
-              salmonellaData={selectedFarmSalmonellaData}
-              catchingProgramEntries={catchingProgramEntries}
-              dieselOrders={visibleDieselOrders}
-              submittedFeedOrders={submittedFeedOrders}
-              cycles={cycles}
-              activeCycle={activeCycle}
-              selectedFarmCycleDetails={selectedFarmCycleDetails}
-              notifications={allNotifications}
-              leaveRequests={leaveRequests}
-              septicTankRequests={septicTankRequests}
-              employees={employees}
-              feedBulkerRecords={feedBulkerRecords}
-              vehicleMovementLogs={vehicleMovementLogs}
-              inChargeTimeLogs={inChargeTimeLogs}
-              editingFeedOrderId={editingFeedOrderId}
-              onMarkNotificationsAsRead={handleMarkNotificationsAsRead}
-              onStartNewCycle={handleStartNewCycle}
-              onUpdateFarmCycleDetails={handleUpdateFarmCycleDetails}
-              onFinishFarmCycle={handleFinishFarmCycle}
-              onReopenFarmCycle={handleReopenFarmCycle}
-              onVerifyAdminPassword={verifyAdminPassword}
-              onUpdateData={handleDataUpdate}
-              onBulkUpdateDailyReports={handleBulkUpdateDailyReports}
-              onAddSubmittedFeedOrder={handleAddSubmittedFeedOrder}
-              onUpdateSubmittedFeedOrder={handleUpdateSubmittedFeedOrder}
-              onStartEditingFeedOrder={handleStartEditingFeedOrder}
-              onCancelEditingFeedOrder={handleCancelEditingFeedOrder}
-              onConfirmFeedDelivery={handleConfirmFeedDelivery}
-              onUpdateConfirmedFeedDelivery={handleUpdateConfirmedFeedDelivery}
-              onUpdateChicksReceiving={handleChicksReceivingUpdate}
-              onUpdateWeeklyWeight={handleWeeklyWeightUpdate}
-              onUpdateChicksGrading={handleChicksGradingUpdate}
-              onUpdateCatchingDetails={handleUpdateCatchingDetails}
-              onUpdateSalmonella={handleSalmonellaUpdate}
-              onUpdateCatchingProgramEntries={handleUpdateCatchingProgramEntries}
-              onAddDieselOrder={handleAddDieselOrder}
-              onUpdateDieselOrderStatus={handleUpdateDieselOrderStatus}
-              onAddDieselOrderReservation={handleAddDieselOrderReservation}
-              onAddLeaveRequest={handleAddLeaveRequest}
-              onUpdateLeaveRequestStatus={handleUpdateLeaveRequestStatus}
-              onAddSepticTankRequest={handleAddSepticTankRequest}
-              onUpdateSepticTankRequestStatus={handleUpdateSepticTankRequestStatus}
-              onAddEmployee={handleAddEmployee}
-              onUpdateEmployee={handleUpdateEmployee}
-              onDeleteEmployee={handleDeleteEmployee}
-              onBulkDeleteEmployees={handleBulkDeleteEmployees}
-              onBulkImportEmployees={handleBulkImportEmployees}
-              onAddFeedBulkerRecord={handleAddFeedBulkerRecord}
-              onUpdateFeedBulkerRecord={handleUpdateFeedBulkerRecord}
-              onAddVehicleMovementLog={handleAddVehicleMovementLog}
-              onAddOrUpdateInChargeTimeLog={handleAddOrUpdateInChargeTimeLog}
-              allAuthorizedFarmsData={authorizedFarmsData}
-              allAuthorizedFarmsChicksReceivingData={authorizedFarmsChicksReceivingData}
-              allAuthorizedFarmsWeeklyWeightData={authorizedFarmsWeeklyWeightData}
-              allAuthorizedFarmsChicksGradingData={authorizedFarmsChicksGradingData}
-              allAuthorizedFarmsFeedDeliveryData={authorizedFarmsFeedDeliveryData}
-              allAuthorizedFarmsCatchingDetailsData={authorizedFarmsCatchingDetailsData}
-              allAuthorizedFarmsSalmonellaData={authorizedFarmsSalmonellaData}
-              users={users}
-              onAddUser={handleAddUser}
-              onUpdateUser={handleUpdateUser}
-              onDeleteUser={handleDeleteUser}
-              onExportData={handleExportData}
-              onImportData={handleImportData}
-              onBulkImportChicksReceiving={handleBulkImportChicksReceiving}
-              onToggleMaintenanceMode={handleToggleMaintenanceMode}
-          />
-      </main>
+    <div className="flex h-screen bg-gray-100 poultry-background">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <Dashboard
+                currentUser={currentUser}
+                onLogout={handleLogout}
+                farms={currentUser.authorizedFarms}
+                selectedFarm={selectedFarm}
+                onSelectFarm={handleSelectFarm}
+                cyclesForSelectedFarm={cyclesForSelectedFarm}
+                selectedCycleId={selectedCycleId}
+                onSelectCycle={handleSelectCycle}
+                dailyReports={dailyReports}
+                waterRecordsForSelectedFarm={waterRecordsForSelectedFarm}
+                feedOrderData={feedOrderData}
+                chicksReceivingData={chicksReceivingData}
+                weeklyWeightData={weeklyWeightData}
+                chicksGradingData={chicksGradingData}
+                feedDeliveryRecords={feedDeliveryRecords}
+                catchingDetailsData={catchingDetailsData}
+                salmonellaData={salmonellaData}
+                catchingProgramEntries={catchingProgramEntries}
+                dieselOrders={dieselOrders}
+                submittedFeedOrders={submittedFeedOrders}
+                cycles={cycles}
+                activeCycle={activeCycle}
+                selectedFarmCycleDetails={selectedFarmCycleDetails}
+                notifications={allNotifications}
+                leaveRequests={leaveRequests}
+                septicTankRequests={septicTankRequests}
+                employees={employees}
+                feedBulkerRecords={feedBulkerRecords}
+                vehicleMovementLogs={vehicleMovementLogs}
+                inChargeTimeLogs={inChargeTimeLogs}
+                vehicleDetails={vehicleDetails}
+                editingFeedOrderId={editingFeedOrderId}
+                onMarkNotificationsAsRead={handleMarkNotificationsAsRead}
+                onStartNewCycle={handleStartNewCycle}
+                onUpdateFarmCycleDetails={handleUpdateFarmCycleDetails}
+                onFinishFarmCycle={handleFinishFarmCycle}
+                onReopenFarmCycle={handleReopenFarmCycle}
+                onVerifyAdminPassword={handleVerifyAdminPassword}
+                onUpdateData={handleUpdateData}
+                onUpdateWaterRecord={handleUpdateWaterRecord}
+                onBulkUpdateDailyReports={handleBulkUpdateDailyReports}
+                onAddSubmittedFeedOrder={handleAddSubmittedFeedOrder}
+                onUpdateSubmittedFeedOrder={handleUpdateSubmittedFeedOrder}
+                onStartEditingFeedOrder={handleStartEditingFeedOrder}
+                onCancelEditingFeedOrder={handleCancelEditingFeedOrder}
+                onConfirmFeedDelivery={handleConfirmFeedDelivery}
+                onUpdateConfirmedFeedDelivery={handleUpdateConfirmedFeedDelivery}
+                onUpdateChicksReceiving={handleUpdateChicksReceiving}
+                onUpdateWeeklyWeight={handleUpdateWeeklyWeight}
+                onUpdateChicksGrading={handleUpdateChicksGrading}
+                onUpdateCatchingDetails={handleUpdateCatchingDetails}
+                onUpdateSalmonella={handleUpdateSalmonella}
+                onUpdateCatchingProgramEntries={handleUpdateCatchingProgramEntries}
+                onAddDieselOrder={handleAddDieselOrder}
+                onUpdateDieselOrderStatus={handleUpdateDieselOrderStatus}
+                onAddDieselOrderReservation={handleAddDieselOrderReservation}
+                onAddLeaveRequest={handleAddLeaveRequest}
+                onUpdateLeaveRequestStatus={handleUpdateLeaveRequestStatus}
+                onAddSepticTankRequest={handleAddSepticTankRequest}
+                onUpdateSepticTankRequestStatus={handleUpdateSepticTankRequestStatus}
+                onAddEmployee={handleAddEmployee}
+                onUpdateEmployee={handleUpdateEmployee}
+                onDeleteEmployee={handleDeleteEmployee}
+                onBulkDeleteEmployees={handleBulkDeleteEmployees}
+                onBulkImportEmployees={handleBulkImportEmployees}
+                onAddFeedBulkerRecord={handleAddFeedBulkerRecord}
+                onUpdateFeedBulkerRecord={handleUpdateFeedBulkerRecord}
+                onAddVehicleMovementLog={handleAddVehicleMovementLog}
+                onAddOrUpdateInChargeTimeLog={handleAddOrUpdateInChargeTimeLog}
+                onAddVehicleDetails={handleAddVehicleDetails}
+                onUpdateVehicleDetails={handleUpdateVehicleDetails}
+                onDeleteVehicleDetails={handleDeleteVehicleDetails}
+                onBulkImportVehicleDetails={handleBulkImportVehicleDetails}
+                allAuthorizedFarmsData={allAuthorizedFarmsData}
+                allAuthorizedFarmsWaterData={allAuthorizedFarmsWaterData}
+                allAuthorizedFarmsChicksReceivingData={allAuthorizedFarmsChicksReceivingData}
+                allAuthorizedFarmsWeeklyWeightData={allAuthorizedFarmsWeeklyWeightData}
+                allAuthorizedFarmsChicksGradingData={allAuthorizedFarmsChicksGradingData}
+                allAuthorizedFarmsFeedDeliveryData={allAuthorizedFarmsFeedDeliveryData}
+                allAuthorizedFarmsCatchingDetailsData={allAuthorizedFarmsCatchingDetailsData}
+                allAuthorizedFarmsSalmonellaData={allAuthorizedFarmsSalmonellaData}
+                users={users}
+                onAddUser={(newUser) => setUsers(prev => [handleCreationAudit({ ...newUser, id: new Date().toISOString() }), ...prev])}
+                onUpdateUser={(updatedUser) => setUsers(prev => prev.map(u => u.id === updatedUser.id ? handleAudit(updatedUser) : u))}
+                onDeleteUser={(userId) => setUsers(prev => prev.filter(u => u.id !== userId))}
+                onExportData={handleExportData}
+                onImportData={handleImportData}
+                onBulkImportChicksReceiving={handleBulkImportChicksReceiving}
+                onToggleMaintenanceMode={handleToggleMaintenanceMode}
+            />
+        </main>
     </div>
   );
 }

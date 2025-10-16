@@ -8,6 +8,7 @@ export type User = {
   role: 'Admin' | 'Site Manager' | 'Supervisor' | 'Leadman' | 'Gate Keeper';
   authorizedFarms: string[];
   contactNumber?: string;
+  gateName?: string;
 };
 
 export interface AuditInfo {
@@ -72,6 +73,23 @@ export interface AllFarmsData {
   [farmName: string]: DailyReport[];
 }
 
+export interface WaterRecordHouseData {
+  sixAmReading: string;
+  sixPmReading: string;
+}
+
+export interface DailyWaterRecord {
+  date: string;
+  cycleId: string;
+  houses: WaterRecordHouseData[];
+  meta?: AuditInfo;
+}
+
+export interface AllFarmsWaterData {
+  [farmName: string]: DailyWaterRecord[];
+}
+
+
 export interface FeedOrderItem {
   houseNo: number;
   deliveryDate: string;
@@ -122,6 +140,7 @@ export interface ChicksReceivingHouseData {
   productionOrderNo: string;
   productionLine: string;
   trialOrControl: 'Trial' | 'Control' | '';
+  structure: 'New' | 'Old' | '';
 }
 
 export interface ChicksReceivingData {
@@ -347,6 +366,7 @@ export interface FeedBulkerRecord {
   bulkerNo: string;
   entryTime: string;
   exitTime: string;
+  gateName: string;
   meta?: CreationAuditInfo;
 }
 
@@ -357,6 +377,7 @@ export interface VehicleMovementLog {
   vehicleType: 'Car / P-ups / SUV' | 'Trucks' | 'Trailers (Feed bulkers, diesel tanker,..)' | 'Bus / Coasters' | 'Scooter / Cycles' | 'Others 1';
   direction: 'In' | 'Out';
   timestamp: string;
+  gateName: string;
   meta?: CreationAuditInfo;
 }
 
@@ -367,5 +388,15 @@ export interface InChargeTimeLog {
   inchargeName: string;
   inTime: string;
   outTime: string;
+  gateName: string;
+  meta?: CreationAuditInfo;
+}
+
+export interface VehicleDetails {
+  id: string;
+  truckPlateNo: string;
+  driverName: string;
+  sideNo: string;
+  bulkerNo: string;
   meta?: CreationAuditInfo;
 }

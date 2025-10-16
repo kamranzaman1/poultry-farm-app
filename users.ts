@@ -1,5 +1,5 @@
 import type { User } from './types';
-import { FARM_NAMES } from './constants';
+import { FARM_NAMES, GATE_NAMES } from './constants';
 
 const SUPERVISOR_AND_ADMIN_USERS: User[] = [
   { 
@@ -68,11 +68,32 @@ export const INITIAL_USERS: User[] = [
   },
   {
     id: 'gatekeeper1',
-    name: 'Gate Keeper',
-    username: 'gate',
+    name: 'Gate Keeper B2',
+    username: 'gateb2',
     password: '123',
     role: 'Gate Keeper',
     authorizedFarms: [],
-    contactNumber: '0598765432'
+    gateName: 'Butain 2 Gate',
+    contactNumber: '0598765432',
+  },
+  {
+    id: 'gatekeeper2',
+    name: 'Gate Keeper B3',
+    username: 'gateb3',
+    password: '123',
+    role: 'Gate Keeper',
+    authorizedFarms: [],
+    gateName: 'Butain 3 Gate',
+    contactNumber: '0598765433',
+  },
+  {
+    id: 'gatekeeper3',
+    name: 'Gate Keeper Shemalia',
+    username: 'gateshe',
+    password: '123',
+    role: 'Gate Keeper',
+    authorizedFarms: [],
+    gateName: 'Shemalia Gate',
+    contactNumber: '0598765434',
   },
 ];
